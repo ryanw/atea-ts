@@ -353,8 +353,8 @@ export function calculateNormal(triangle: Triangle, transform?: Matrix4): Vector
 		p2 = transformPoint(transform, p2);
 	}
 
-	const v0 = subtract(p1, p0);
-	const v1 = subtract(p2, p0);
+	const v0 = subtract(p2, p0);
+	const v1 = subtract(p1, p0);
 	return normalize(cross(v0, v1));
 }
 

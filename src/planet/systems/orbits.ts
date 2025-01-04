@@ -20,7 +20,7 @@ export class OrbitsSystem extends System {
 			const t = world.getComponent(entity, TransformComponent)!;
 			const v = world.getComponent(entity, VelocityComponent)!;
 			const orbit = world.getComponent(entity, OrbitComponent)!;
-			const targetPosition = orbit.positionAtTime(performance.now()/10000.0);
+			const targetPosition = orbit.positionAtTime(performance.now()/100_000.0);
 			const diff = subtract(targetPosition, t.position);
 			const dist = magnitude(diff);
 			v.velocity = scale(normalize(diff), dist / dt);

@@ -53,7 +53,7 @@ export class PhysicsSystem extends System {
 					position,
 					velocity: velocity?.velocity || [0, 0, 0],
 					force,
-					radius: collider?.radius ?? 10
+					radius: collider?.radius ?? 0
 				};
 			});
 		}
@@ -68,9 +68,9 @@ export class PhysicsSystem extends System {
 			// Add every planet's gravity to velocity
 			for (const planet of planets) {
 				if (planet.entity === entity) continue;
-				const dir = subtract(tra.position, planet.position);
-				const distance = magnitude(dir) - planet.radius;
-				const drag = 1.0 - max(0.0, min(1.0, distance / 512.0));
+				const diff = subtract(tra.position, planet.position);
+				const distance = magnitude(diff) - planet.radius;
+				const drag = 1.0 - max(0.0, min(1.0, distance / 5120.0));
 
 				const gravity = calculateGravity(tra.position, planet.position, planet.force * dt);
 				vel.velocity = add(vel.velocity, gravity);
@@ -81,7 +81,8 @@ export class PhysicsSystem extends System {
 						// Objects touching, snap together
 						//vel.velocity = [...planet.velocity];
 						if (distance < 0.0) {
-							tra.position = add(planet.position, scale(normalize(dir), planet.radius));
+							tra.position = add(planet.position, scale(normalize(diff), planet.radius));
+							vel.velocity = planet.velocity;
 						}
 						//continue;
 					}
@@ -93,8 +94,7 @@ export class PhysicsSystem extends System {
 						const mag = dot(speedDiff, gravDir);
 						const proj = scale(gravDir, mag);
 						const velDiff = scale(subtract(speedDiff, proj), drag);
-						// FIXME?
-						vel.velocity = planet.velocity;//add(vel.velocity, scale(velDiff, dt));
+						vel.velocity = add(vel.velocity, scale(speedDiff, dt));
 					}
 				}
 			}

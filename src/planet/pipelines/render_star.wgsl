@@ -165,7 +165,11 @@ fn fs_main(in: VertexOut) -> FragmentOut {
 		discard;
 	}
 
+
 	var p = in.fragPosition.xyz / in.fragPosition.w;
+	let cameraPos = camera.view * vec4(0.0, 0.0, 0.0, 1.0);
+	let cp = cameraPos.xyz/cameraPos.w;
+	var viewDir = normalize(cp - p);
 
 	// Position of the back
 	let p0 = worldFromScreen(uv, in.position.z, camera.invProjection);
@@ -176,16 +180,16 @@ fn fs_main(in: VertexOut) -> FragmentOut {
 	// Depth between rock and star
 	let pd = (p1 - p0);
 
-	let pn0 = p0 - normalize(pd)*100.0;
-	let pn1 = p0 - normalize(pd)*300.0;
+	let pn0 = p0 + normalize(pd)*200.0;
+	let pn1 = p0 + normalize(pd)*600.0;
 
 	// Core noise
 	//var n0 = fractalNoise(pn0/128.0, 2) + 0.5;
 	//var n1 = fractalNoise(pn1/256.0, 3) + 0.5;
-	let n0 = fractalNoise(pn0/128.0 + camera.t/4.0, 1)/4.0;
+	let n0 = fractalNoise(pn0/128.0 + camera.t/3.0, 1)/6.0;
 	let n1 = fractalNoise(pn1/256.0 + n0, 3) + 0.5;
-	let n2 = fractalNoise(pn0/311.0 + camera.t/8.0, 3)/16.0;
-	let n3 = fractalNoise(pn1/344.0 + camera.t/8.0, 3);
+	let n2 = fractalNoise(pn0/311.0 + camera.t/4.0, 3)/16.0;
+	let n3 = fractalNoise(pn1/344.0 + camera.t/4.0, 3);
 
 	var starColor = vec4(0.0);
 	
@@ -197,7 +201,7 @@ fn fs_main(in: VertexOut) -> FragmentOut {
 	starDepth -= n2;
 
 	// Corona
-	let corona = 0.3;
+	let corona = 0.1;
 	let fuzz = corona;
 	if (starDepth < corona) {
 		coronaDepth = smoothstep(0, corona, starDepth - n2);

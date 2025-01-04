@@ -21,7 +21,7 @@ import { PlayerInputSystem } from './systems/player_input';
 import { FollowCameraSystem } from 'engine/ecs/systems/follow_camera';
 import { WaterMaterial } from './materials/water';
 import { RenderWaterPipeline } from './pipelines/render_water';
-import { Point3 } from 'engine/math';
+import { Point3, Vector3 } from 'engine/math';
 import { Planet, StarSystem } from './galaxy';
 import { Entity } from 'engine/ecs';
 import { OrbitsSystem } from './systems/orbits';
@@ -33,6 +33,8 @@ import { StarMaterial } from './materials/star';
 import { RenderStarPipeline } from './pipelines/render_star';
 import { ui } from './ui';
 import { CubeSphere } from 'engine/meshes/cubesphere';
+import { add } from 'engine/math/vectors';
+import { SimpleMaterial } from 'engine/material';
 
 /**
  * Start the game
@@ -74,10 +76,11 @@ export async function main(el: HTMLCanvasElement) {
 		planetEntities.push([planet, p, w]);
 	}
 
-	const planet = planets[2];
+	const planet = planets[0];
 	const star = stars[0];
-	const playerStart: Point3 = [0, 0, -star.radius * 3];
-	const player = prefabs.player(world, playerStart, [0, 0, 0]);
+	const playerStart: Point3 = add(planet.positionAtTime(0), [0, 0, -star.radius + 0.1]);
+	const playerVelocity: Vector3 = planet.velocity;
+	const player = prefabs.player(world, playerStart, playerVelocity);
 	const camera = prefabs.orbitCamera(world, player);
 	const sky = prefabs.skybox(world, camera);
 
@@ -95,7 +98,7 @@ export async function main(el: HTMLCanvasElement) {
 async function initGfx(el: HTMLCanvasElement): Promise<Gfx> {
 	if (el.tagName !== 'CANVAS') throw new Error('Element is not a canvas');
 	const gfx: Gfx = await Gfx.attachNotified(el);
-	gfx.configure({ renderMode: 0, ditherSize: 0, drawShadows: false, drawEdges: 0, canvasPixelRatio: 1 });
+	gfx.configure({ renderMode: 0, ditherSize: 0, drawShadows: false, drawEdges: 0, canvasPixelRatio: 0.5 });
 
 	return gfx;
 }
@@ -146,6 +149,7 @@ async function initGraphics(gfx: Gfx, planetSeed: number = 0): Promise<WorldGrap
 
 	const playerMesh = new ShipMesh(gfx);
 	graphics.insertResource('player-ship', playerMesh);
+	graphics.insertResource('ship-material', new SimpleMaterial(gfx, 0xffff00000n));
 
 	return graphics;
 }

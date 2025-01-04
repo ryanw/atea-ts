@@ -37,7 +37,7 @@ export class StarSystem {
 		public systemSeed: bigint,
 	) {
 		const rng = bigRandomizer(this.systemSeed + 3240n);
-		this.planetCount = rng(3, 16) | 0;
+		this.planetCount = 1;//rng(3, 16) | 0;
 	}
 
 	*stars(): Generator<Star> {
@@ -54,7 +54,8 @@ export class StarSystem {
 		let planetSeed;
 		for (let i = 0; i < this.planetCount; i++) {
 			planetSeed = rngi();
-			const planet = new Planet(planetSeed, orbit + rngf(200.0, 1000.0));
+			const gap = rngf(2000.0, 3000.0);
+			const planet = new Planet(planetSeed, orbit + gap);
 			orbit = magnitude(planet.positionAtTime(0)) + planet.radius * 2.0;
 			yield planet;
 		}

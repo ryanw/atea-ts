@@ -22,7 +22,7 @@ export function orbitCamera(world: World, target: Entity): Entity {
 		new MetaComponent("Orbit Camera"),
 		new TransformComponent([0, 0, 0]),
 		new CameraComponent(1, 100000.0),
-		new OrbitCameraComponent(target, 16, [0, 0.01, 0], quaternionFromEuler(0.8, 0, 0)),
+		new OrbitCameraComponent(target, 16, [0, 0.01, 0], quaternionFromEuler(0.3, 0, 0)),
 	]);
 }
 
@@ -142,6 +142,7 @@ export function player(world: World, position: Point3 = [0, 0, 0], velocity: Vec
 		),
 		new VelocityComponent(velocity),
 		new MeshComponent('player-ship'),
+		new MaterialComponent('ship-material'),
 		new ParticlesComponent('tiny-cube', 0, true),
 		new FocusableComponent(),
 	]);

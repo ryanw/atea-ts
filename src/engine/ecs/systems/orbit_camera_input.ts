@@ -22,6 +22,7 @@ export class OrbitCameraInputSystem extends System {
 		'shift': Key.Boost,
 	};
 	distance: number = 8;
+	snapDistance: number = 0.2;
 	readonly heldKeys = new Map<Key, number>;
 	readonly axis = new Map<XboxAxis, number>;
 	readonly previousButtons: Record<number, number> = {};
@@ -183,7 +184,7 @@ export class OrbitCameraInputSystem extends System {
 		const x = e.movementX / 1000;
 		const y = e.movementY / 1000;
 
-		this.rotateCameras(y, x, 0.2);
+		this.rotateCameras(y, x, this.snapDistance);
 	};
 
 	onMouseMove = (e: MouseEvent) => {
@@ -236,7 +237,7 @@ export class OrbitCameraInputSystem extends System {
 		const dx = px - x;
 		const dy = py - y;
 
-		this.rotateCameras(dy / -1000, dx / -1000, 0.2);
+		this.rotateCameras(dy / -1000, dx / -1000, this.snapDistance);
 		this.tick(0, this.world);
 		this.previousTouch = touch;
 	};
