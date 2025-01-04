@@ -66,6 +66,7 @@ export class Star {
 	readonly coronaColor: Color;
 	readonly shallowColor: Color;
 	readonly deepColor: Color;
+	readonly coreColor: Color;
 	constructor(
 		readonly starSeed: bigint,
 		readonly position: Point3,
@@ -78,9 +79,11 @@ export class Star {
 		if (rng() < 0.5) n0 = -n0;
 		let n1 = 0.1 + rng() * 0.4;
 		if (rng() < 0.5) n1 = -n1;
+		let n2 = 0.1 + rng() * 0.5;
 		this.coronaColor = hsl(h, 0.5, 0.65);
 		this.shallowColor = hsl((h + n0) % 1.0, 0.5, 0.6);
-		this.deepColor = hsl((h + n1) % 1.0, 0.3, 0.4);
+		this.deepColor = hsl((h + n1) % 1.0, 0.4, 0.4);
+		this.coreColor = hsl((h + n1 * (1.0 + n2)) % 1.0, 0.4, 0.4);
 	}
 }
 

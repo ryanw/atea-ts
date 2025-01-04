@@ -60,6 +60,7 @@ export async function main(el: HTMLCanvasElement) {
 				star.coronaColor,
 				star.shallowColor,
 				star.deepColor,
+				star.coreColor,
 			),
 		);
 		prefabs.star(world, materialName, star.position, star.radius);

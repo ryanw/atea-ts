@@ -7,6 +7,7 @@ import { UniformBuffer } from 'engine/uniform_buffer';
 export class StarMaterial extends Material {
 	readonly uniform: UniformBuffer;
 	readonly forwardRender = true;
+	readonly coreColor: bigint;
 	readonly deepColor: bigint;
 	readonly shallowColor: bigint;
 	readonly coronaColor: bigint;
@@ -17,6 +18,7 @@ export class StarMaterial extends Material {
 		coronaColor: number | bigint | Color,
 		shallowColor: number | bigint | Color = coronaColor,
 		deepColor: number | bigint | Color = shallowColor,
+		coreColor: number | bigint | Color = deepColor,
 	) {
 		super();
 		if (Array.isArray(shallowColor)) {
@@ -28,6 +30,11 @@ export class StarMaterial extends Material {
 			this.deepColor = colorToBigInt(deepColor);
 		} else {
 			this.deepColor = BigInt(deepColor||0);
+		}
+		if (Array.isArray(coreColor)) {
+			this.coreColor = colorToBigInt(coreColor);
+		} else {
+			this.coreColor = BigInt(coreColor||0);
 		}
 		if (Array.isArray(coronaColor)) {
 			this.coronaColor = colorToBigInt(coronaColor);
@@ -45,7 +52,7 @@ export class StarMaterial extends Material {
 			this.coronaColor,
 			this.shallowColor,
 			this.deepColor,
-			this.deepColor,
+			this.coreColor,
 		];
 	}
 
