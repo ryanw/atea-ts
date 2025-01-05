@@ -29,12 +29,17 @@ function toVertex(position: Point3, i: number): ColorVertex {
 
 export class ShipMesh extends SimpleMesh {
 	constructor(gfx: Gfx) {
+		// Lander mode mesh
 		const landerVertices: Array<ColorVertex> = buildLanderMesh(toVertex);
 		calculateNormals(landerVertices);
+
+		// Space mode mesh
 		const spaceVertices: Array<ColorVertex> = buildSpaceMesh(toVertex);
 		calculateNormals(spaceVertices);
+
 		super(gfx, [...landerVertices, ...spaceVertices]);
-		// Procedurally generated in shader
+
+		// Force it to 2 variants
 		this.vertexCount = landerVertices.length;
 		this.variantCount = 2;
 	}
@@ -67,17 +72,22 @@ function buildNGon(sides: number, size: number = 1): Array<Point3> {
 }
 
 export function buildLanderMesh<T>(callback: (position: Point3, index: number) => T): Array<T> {
-	const size = 0.2;
-	return buildNGon(8, size).map(callback);
+	const size = 0.1
+	return buildNGon(6, size).map(callback);
 }
+
 export function buildSpaceMesh<T>(callback: (position: Point3, index: number) => T): Array<T> {
-	const size = 0.1;
-	const hull = buildNGon(8, size);
+	const size = 0.1
+	const { abs } = Math;
+	const hull = buildNGon(6);
 	return hull.map((p, i) => {
-		const sx = 1.0 - (p[2]/size);
-		const sy = 1.0 - (p[2]/size);
-		const sz = 1.7;
-		const q = scale(p, [sx, sy, sz]);
+		const sx = 1.0 - p[2];
+		const sy = 1.0 - p[2];
+		let sz = 1.6;
+		if (p[2] < 0) {
+			sz *= 0.3 + 0.4 * abs(p[0]);
+		}
+		const q = scale(p, [sx * size, sy * size, sz * size]);
 		return callback(q, i);
 	});
 }

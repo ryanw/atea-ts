@@ -1,7 +1,7 @@
 import { DEADZONE, Key, XboxAxis, XboxButton } from 'engine/input';
 import { add, magnitudeSquared, normalize, scale, subtract } from 'engine/math/vectors';
 import { Vector3 } from 'engine/math';
-import { multiply, multiplyVector, rotation, rotationFromQuaternion } from 'engine/math/transform';
+import { multiplyVector, rotationFromQuaternion } from 'engine/math/transform';
 import { System } from 'engine/ecs/systems';
 import { World } from 'engine/ecs/world';
 import { PlayerComponent, VelocityComponent, TransformComponent } from 'engine/ecs/components';
@@ -10,8 +10,6 @@ import { ParticlesComponent } from 'engine/ecs/components/particles';
 import { SoundComponent } from 'engine/ecs/components/sound';
 import * as quats from 'engine/math/quaternions';
 import { FollowCameraComponent } from 'engine/ecs/components/camera';
-import { GravityComponent } from '../components/gravity';
-import { MeshComponent } from 'engine/ecs/components/mesh';
 import { FocusableComponent } from '../components/focusable';
 import { ShipComponent, ShipMode } from '../components/ship';
 import { MaterialComponent } from 'engine/ecs/components/material';
@@ -271,14 +269,32 @@ export class PlayerInputSystem extends System {
 		}
 	}
 
+	thrustDirection(world: World, entity: Entity): Vector3 {
+		const ship = world.getComponent(entity, ShipComponent);
+		if (!ship) return [0, 0, 0];
+
+		switch (ship.mode) {
+			case ShipMode.Lander:
+				return [0, 1, 0];
+			case ShipMode.Space:
+				return [0, 0, 2];
+			default:
+				return [0, 0, 0];
+
+		}
+	}
+
 	updateLander(dt: number, world: World, entity: Entity) {
 		const transform = world.getComponent(entity, TransformComponent)!;
 		const playerVelocity = world.getComponent(entity, VelocityComponent)!;
 		const particles = world.getComponent(entity, ParticlesComponent);
 
-		const speed = this.heldKeys.has(Key.Boost) ? 256 : 128;
+		const speed = this.heldKeys.has(Key.Boost) ? 512 : 256;
 		const rotateSpeed = 4.0;
-		const movement: Vector3 = [0, 0, 0];
+		let movement: Vector3 = [0, 0, 0];
+
+		const thrustDirection = this.thrustDirection(world, entity);
+
 		let brake = 0.0;
 		let pitch = 0.0;
 		let yaw = 0.0;
@@ -309,13 +325,13 @@ export class PlayerInputSystem extends System {
 				case Key.Thrust:
 					if (Math.abs(value) > DEADZONE) {
 						thrust = value;
-						movement[2] = value;
+						movement = add(movement, scale(thrustDirection, value));
 					}
 					break;
 				case Key.Brake:
 					if (Math.abs(value) > DEADZONE) {
 						thrust = -value;
-						movement[2] = -value;
+						movement = add(movement, scale(thrustDirection, -value));
 					}
 					break;
 				case Key.Stable:
