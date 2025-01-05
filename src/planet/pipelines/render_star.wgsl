@@ -16,6 +16,13 @@ struct Material {
 	seed: u32,
 }
 
+struct StarMaterial {
+	coreColor: u32,
+	deepColor: u32,
+	shallowColor: u32,
+	coronaColor: u32,
+}
+
 struct VertexIn {
 	@builtin(vertex_index) id: u32,
 	@builtin(instance_index) instance: u32,
@@ -24,10 +31,11 @@ struct VertexIn {
 	@location(4) transform1: vec4f,
 	@location(5) transform2: vec4f,
 	@location(6) transform3: vec4f,
-	@location(7) instanceColors: vec4<u32>,
-	@location(8) variantIndex: u32,
-	@location(9) variantBlend: f32,
-	@location(10) live: u32,
+	@location(7) materialIndex: u32,
+	@location(8) instanceColors: vec3<u32>,
+	@location(9) variantIndex: u32,
+	@location(10) variantBlend: f32,
+	@location(11) live: u32,
 }
 
 struct VertexOut {
@@ -88,6 +96,9 @@ var<storage, read> vertices: array<PackedVertex>;
 @group(0) @binding(4)
 var depthBuffer: texture_depth_2d;
 
+@group(0) @binding(5)
+var<storage, read> materials: array<StarMaterial>;
+
 @vertex
 fn vs_main(in: VertexIn) -> VertexOut {
 	var out: VertexOut;
@@ -96,20 +107,17 @@ fn vs_main(in: VertexIn) -> VertexOut {
 		return out;
 	}
 
+	let material = materials[in.materialIndex];
 	let variantIndex = in.variantIndex + pawn.variantIndex;
-	let seed = material.seed + variantIndex;
+	let seed = variantIndex;
 
 	let r0 = rnd3u(vec3(122 + seed * 7));
 	let r1 = rnd3u(vec3(1200 + seed * 13)) - 0.5;
 
-	let coronaColor = unpack4x8unorm(in.instanceColors[0]);
-	let shallowColor = unpack4x8unorm(in.instanceColors[1]);
-	let deepColor = unpack4x8unorm(in.instanceColors[2]);
-	let coreColor = unpack4x8unorm(in.instanceColors[3]);
-
-	//let shallowColor = hsla(r0, 0.7, 0.5, 1.0);
-	//let deepColor = shallowColor;//hsla((r0 + 0.4 * r1) % 1.0, 0.6, 0.3, 0.9);
-
+	let coronaColor = unpack4x8unorm(material.coronaColor);
+	let shallowColor = unpack4x8unorm(material.shallowColor);
+	let deepColor = unpack4x8unorm(material.deepColor);
+	let coreColor = unpack4x8unorm(material.coreColor);
 
 	let idx = in.id;
 	let packedVertex = vertices[idx];

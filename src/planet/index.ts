@@ -30,11 +30,19 @@ import { RenderSkyPipeline } from './pipelines/render_sky';
 import { hsl } from 'engine/color';
 import { FollowSystem } from 'engine/ecs/systems/follow';
 import { StarMaterial } from './materials/star';
-import { RenderStarPipeline } from './pipelines/render_star';
 import { ui } from './ui';
 import { CubeSphere } from 'engine/meshes/cubesphere';
 import { add } from 'engine/math/vectors';
 import { SimpleMaterial } from 'engine/material';
+import { RenderStarPipeline } from './pipelines/render_star';
+
+const GFX_CONFIG = {
+	renderMode: 0,
+	ditherSize: 0,
+	drawShadows: false,
+	drawEdges: 0,
+	canvasPixelRatio: 1,
+}
 
 /**
  * Start the game
@@ -58,7 +66,6 @@ export async function main(el: HTMLCanvasElement) {
 			materialName,
 			new StarMaterial(
 				gfx,
-				Number(star.starSeed),
 				star.coronaColor,
 				star.shallowColor,
 				star.deepColor,
@@ -98,7 +105,7 @@ export async function main(el: HTMLCanvasElement) {
 async function initGfx(el: HTMLCanvasElement): Promise<Gfx> {
 	if (el.tagName !== 'CANVAS') throw new Error('Element is not a canvas');
 	const gfx: Gfx = await Gfx.attachNotified(el);
-	gfx.configure({ renderMode: 0, ditherSize: 0, drawShadows: false, drawEdges: 0, canvasPixelRatio: 0.5 });
+	gfx.configure(GFX_CONFIG);
 
 	return gfx;
 }
@@ -116,6 +123,7 @@ async function initGraphics(gfx: Gfx, planetSeed: number = 0): Promise<WorldGrap
 		[PlanetMaterial, RenderPlanetPipeline],
 		[WaterMaterial, RenderWaterPipeline],
 		[SkyMaterial, RenderSkyPipeline],
+		[StarMaterial, RenderStarPipeline],
 		[StarMaterial, RenderStarPipeline],
 	]);
 	const graphics = new WorldGraphics(gfx);

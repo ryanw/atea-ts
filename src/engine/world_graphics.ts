@@ -28,6 +28,7 @@ import { colorToInt } from './color';
 import { DecorPipeline } from './pipelines/decor';
 import { add } from './math/vectors';
 import { quaternionToEuler } from './math/quaternions';
+import { StorageMaterial } from './storage_material';
 
 export type Resource = {};
 
@@ -201,7 +202,7 @@ export class WorldGraphics {
 				const colors = material.instanceColors();
 				idx = mesh.pushInstance({
 					transform,
-					instanceColor0: colors[0],
+					materialIndex: (material instanceof StorageMaterial) ? BigInt(material.instanceId - 1) : 0n,
 					instanceColor1: colors[1],
 					instanceColor2: colors[2],
 					instanceColor3: colors[3],

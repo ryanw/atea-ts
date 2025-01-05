@@ -136,6 +136,9 @@ export class PlayerInputSystem extends System {
 		const ship = world.getComponent(entity, ShipComponent);
 		if (!ship) return;
 
+		this.updateLander(dt, world, entity);
+
+		/*
 		switch (ship.mode) {
 			case ShipMode.Space:
 				this.updateSpace(dt, world, entity);
@@ -144,6 +147,7 @@ export class PlayerInputSystem extends System {
 				this.updateLander(dt, world, entity);
 				break;
 		}
+		*/
 
 		for (const [key, value] of this.pressedKeys.entries()) {
 			let adjust = 1;
@@ -305,13 +309,13 @@ export class PlayerInputSystem extends System {
 				case Key.Thrust:
 					if (Math.abs(value) > DEADZONE) {
 						thrust = value;
-						movement[1] = value;
+						movement[2] = value;
 					}
 					break;
 				case Key.Brake:
 					if (Math.abs(value) > DEADZONE) {
 						thrust = -value;
-						movement[1] = -value;
+						movement[2] = -value;
 					}
 					break;
 				case Key.Stable:

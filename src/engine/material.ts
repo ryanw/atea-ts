@@ -18,6 +18,9 @@ export abstract class Material {
 	variantIndex: number = 0;
 	variantBlend: number = 1.0;
 	abstract bindingResource(): GPUBindingResource;
+	static bindingResource(): GPUBindingResource | void {
+		return;
+	}
 	instanceColors(): BigVector4 {
 		return [
 			0xffffffffn,

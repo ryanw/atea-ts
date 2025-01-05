@@ -67,11 +67,11 @@ function buildNGon(sides: number, size: number = 1): Array<Point3> {
 }
 
 export function buildLanderMesh<T>(callback: (position: Point3, index: number) => T): Array<T> {
-	const size = 0.066;
+	const size = 0.2;
 	return buildNGon(8, size).map(callback);
 }
 export function buildSpaceMesh<T>(callback: (position: Point3, index: number) => T): Array<T> {
-	const size = 0.066;
+	const size = 0.1;
 	const hull = buildNGon(8, size);
 	return hull.map((p, i) => {
 		const sx = 1.0 - (p[2]/size);

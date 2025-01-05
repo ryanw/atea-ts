@@ -1,8 +1,6 @@
-import { Matrix4, Point3, Quaternion, Vector3 } from "engine/math";
-import { multiply } from "engine/math/transform";
+import { Point3 } from "engine/math";
 import { quaternionFromEuler } from "engine/math/quaternions";
-import { multiplyVector, rotation, rotationFromQuaternion, transformPoint } from "engine/math/transform";
-import { Randomizer, bigIntRandomizer, bigRandomizer, randomizer } from "engine/noise";
+import { bigIntRandomizer, bigRandomizer } from "engine/noise";
 import { magnitude } from "engine/math/vectors";
 import { Orbit } from "./orbit";
 import { Color, hsl } from "engine/color";
@@ -32,18 +30,23 @@ export class Galaxy {
 }
 
 export class StarSystem {
+	readonly starCount: number;
 	readonly planetCount: number;
 	constructor(
 		public systemSeed: bigint,
 	) {
 		const rng = bigRandomizer(this.systemSeed + 3240n);
-		this.planetCount = 1;//rng(3, 16) | 0;
+		this.starCount = rng(1, 1) | 0;
+		this.planetCount = rng(4, 16) | 0;
 	}
 
 	*stars(): Generator<Star> {
 		const rng = bigIntRandomizer(this.systemSeed + 1n);
-		const starSeed = rng();
-		yield new Star(starSeed, [0, 0, 0]);
+		let starSeed;
+		for (let i = 0; i < this.starCount; i++) {
+			starSeed = rng();
+			yield new Star(starSeed, [0, 0, 0]);
+		}
 	}
 
 	*planets(): Generator<Planet> {
@@ -51,9 +54,8 @@ export class StarSystem {
 		const rngf = bigRandomizer(this.systemSeed + 435543n);
 		const star = this.stars().next().value;
 		let orbit = star.radius + 0;
-		let planetSeed;
 		for (let i = 0; i < this.planetCount; i++) {
-			planetSeed = rngi();
+			const planetSeed = rngi();
 			const gap = rngf(2000.0, 3000.0);
 			const planet = new Planet(planetSeed, orbit + gap);
 			orbit = magnitude(planet.positionAtTime(0)) + planet.radius * 2.0;

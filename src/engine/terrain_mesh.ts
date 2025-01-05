@@ -18,7 +18,7 @@ export class TerrainMesh extends SimpleMesh {
 	) {
 		const instances = [{
 			transform: identity(),
-			instanceColor0: BigInt(0xffffffff),
+			materialIndex: BigInt(0xffffffff),
 			instanceColor1: BigInt(0xffffffff),
 			instanceColor2: BigInt(0xffffffff),
 			instanceColor3: BigInt(0xffffffff),

@@ -51,8 +51,8 @@ export interface TransformInstance {
 }
 
 export interface ColorInstance extends TransformInstance {
+	materialIndex: number | bigint;
 	// 32bit rgba color
-	instanceColor0: number | bigint;
 	instanceColor1: number | bigint;
 	instanceColor2: number | bigint;
 	instanceColor3: number | bigint;
@@ -235,7 +235,7 @@ export class Mesh<V extends Vertex<V>, I extends Vertex<I> = object> {
  */
 export class SimpleMesh extends Mesh<ColorVertex, ColorInstance> {
 	vertexOrder: Array<keyof ColorVertex> = ['position', 'normal', 'color', 'softness'];
-	instanceOrder: Array<keyof ColorInstance> = ['transform', 'instanceColor0', 'instanceColor1', 'instanceColor2', 'instanceColor3', 'variantIndex', 'variantBlend', 'live'];
+	instanceOrder: Array<keyof ColorInstance> = ['transform', 'materialIndex', 'instanceColor1', 'instanceColor2', 'instanceColor3', 'variantIndex', 'variantBlend', 'live'];
 	constructor(gfx: Gfx, vertices: Array<ColorVertex> = [], instances?: Array<ColorInstance>) {
 		super(gfx);
 		this.uploadVertices(vertices);

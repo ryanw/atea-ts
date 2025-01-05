@@ -19,12 +19,12 @@ import { identity } from './math/transform';
  *   );
  * }
  */
-export function isPawnOf<T>(pawn: Pawn<unknown>, constructor: new (...args: any[]) => T): pawn is Pawn<T> {
+export function isPawnOf<T, M extends Material = Material>(pawn: Pawn<unknown, M>, constructor: new (...args: any[]) => T): pawn is Pawn<T, M> {
 	return pawn.object instanceof constructor;
 }
 
 
-export class Pawn<T> {
+export class Pawn<T, M extends Material = Material> {
 	public visible = true;
 	private buffer: UniformBuffer;
 	private _transform: Matrix4 = identity();
@@ -33,7 +33,7 @@ export class Pawn<T> {
 	constructor(
 		gfx: Gfx,
 		readonly object: T,
-		public material: Material,
+		public material: M,
 		transform: Matrix4 = identity(),
 	) {
 		this.buffer = new UniformBuffer(gfx, [
