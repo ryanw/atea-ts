@@ -91,7 +91,7 @@ export function planet(world: World, material: string, position: Point3, planet:
 	]);
 }
 
-export function water(world: World, position: Point3, planet: Planet) {
+export function water(world: World, material: string, position: Point3, planet: Planet) {
 	const scale = planet.waterRadius;
 	return world.createEntity([
 		new MetaComponent("Water"),
@@ -100,7 +100,7 @@ export function water(world: World, position: Point3, planet: Planet) {
 		new OrbitComponent(planet.orbit),
 		//new PhysicsComponent(),
 		new VelocityComponent([0, 0, 0]),
-		new MaterialComponent('water-material'),
+		new MaterialComponent(material),
 	]);
 }
 

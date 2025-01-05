@@ -10,9 +10,9 @@ export class WaterMaterial extends StorageMaterial {
 
 	constructor(
 		readonly gfx: Gfx,
-		public seed: number,
-		shallowColor?: number | bigint | Color,
-		deepColor?: number | bigint | Color,
+		public seed: bigint,
+		shallowColor: number | bigint | Color,
+		deepColor: number | bigint | Color,
 	) {
 		super(gfx);
 		if (Array.isArray(shallowColor)) {
@@ -29,7 +29,7 @@ export class WaterMaterial extends StorageMaterial {
 
 	toArrayBuffer() {
 		return new Uint32Array([
-			this.seed,
+			Number(this.seed),
 			Number(this._shallowColor),
 			Number(this._deepColor),
 		]);

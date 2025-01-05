@@ -28,7 +28,7 @@ var<uniform> camera: Camera;
 var<uniform> pawn: Pawn;
 
 @group(0) @binding(2)
-var<storage, read> material: WaterMaterial;
+var<storage, read> materials: array<WaterMaterial>;
 
 @group(0) @binding(3)
 var<storage, read> vertices: array<PackedVertex>;
@@ -44,11 +44,12 @@ fn vs_main(in: VertexIn) -> VertexOut {
 		return out;
 	}
 
+	let material = materials[in.materialIndex];
 	let variantIndex = in.variantIndex + pawn.variantIndex;
 	let seed = material.seed + variantIndex;
 
-	let shallowColor = unpack4x8snorm(material.shallowColor);
-	let deepColor = unpack4x8snorm(material.deepColor);
+	let shallowColor = unpack4x8unorm(material.shallowColor);
+	let deepColor = unpack4x8unorm(material.deepColor);
 
 	let idx = in.id;
 	let packedVertex = vertices[idx];
@@ -144,7 +145,6 @@ fn fs_main(in: VertexOut) -> FragmentOut {
 
 
 	out.color = vec4(color.rgb * shade * color.a, color.a);
-	//out.color = vec4(vec3(waterDepth), 1.0);
 	return out;
 }
 

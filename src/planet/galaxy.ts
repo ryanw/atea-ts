@@ -97,23 +97,26 @@ export class Planet {
 	readonly waterLevel: number;
 	readonly terrainSeed: bigint;
 	readonly landColor: Color;
-	readonly waterColor: Color;
+	readonly shallowWaterColor: Color;
+	readonly deepWaterColor: Color;
 
 	constructor(
 		readonly planetSeed: bigint,
 		orbitRadius: number,
 	) {
-		const rng = bigRandomizer(planetSeed);
-		const rngi = bigIntRandomizer(planetSeed + 41313n);
+		const rng = bigRandomizer(planetSeed + 321n);
+		const rngi = bigIntRandomizer(planetSeed + 4313n);
 		this.terrainSeed = rngi();
-		this.density = rng();
+		this.density = rng(0.5, 1.5);
 		this.waterLevel = rng(0, 100);
 		this.radius = rng(200, 700);
 		const orbitOffset = rng(0.0, Math.PI * 2);
-		const orbitSpeed = rng(0.0, 1.0);
+		const orbitSpeed = rng(0, 1);
 		const orbitTilt = quaternionFromEuler(0, 0, rng(0.0, Math.PI / 6.0));
-		this.landColor = hsl(rng(), 0.5, 0.65);
-		this.waterColor = hsl(rng(), 0.5, 0.65);
+		this.landColor = hsl(rng(0, 1), 0.5, 0.65);
+		const waterHue = rng(0, 1);
+		this.shallowWaterColor = hsl(waterHue, 0.5, 0.65, 0.1);
+		this.deepWaterColor = hsl(waterHue + rng(-0.1, 0.1), 0.6, 0.3, 0.9);
 
 		this.orbit = new Orbit(
 			orbitRadius,

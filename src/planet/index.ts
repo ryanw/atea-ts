@@ -79,19 +79,32 @@ export async function main(el: HTMLCanvasElement) {
 
 	const planetEntities: Array<[Planet, Entity, Entity]> = [];
 	for (const [i, planet] of planets.entries()) {
-		const materialName = `planet-material-${i}`;
+		const position = planet.positionAtTime(0.0);
+
+		const planetMaterialName = `planet-material-${i}`;
 		graphics.insertResource(
-			materialName,
+			planetMaterialName,
 			new PlanetMaterial(
 				gfx,
 				planet.terrainSeed,
 				planet.landColor,
-				planet.waterColor,
+				planet.deepWaterColor,
 			),
 		);
-		const position = planet.positionAtTime(0.0);
-		const p = prefabs.planet(world, materialName, position, planet);
-		const w = prefabs.water(world, position, planet);
+		const p = prefabs.planet(world, planetMaterialName, position, planet);
+
+
+		const waterMaterialName = `water-material-${i}`;
+		graphics.insertResource(
+			waterMaterialName,
+			new WaterMaterial(
+				gfx,
+				planet.terrainSeed,
+				planet.shallowWaterColor,
+				planet.deepWaterColor,
+			),
+		);
+		const w = prefabs.water(world, waterMaterialName, position, planet);
 		planetEntities.push([planet, p, w]);
 	}
 
@@ -148,7 +161,6 @@ async function initGraphics(gfx: Gfx, planetSeed: bigint = 0n): Promise<WorldGra
 	const waterMesh = new Icosphere(gfx, 4);
 	waterMesh.variantCount = 10000;
 	graphics.insertResource('water', waterMesh);
-	graphics.insertResource('water-material', new WaterMaterial(gfx, Number(planetSeed) + 1231));
 
 	const starMesh = new CubeSphere(gfx, 8);
 	graphics.insertResource('star', starMesh);
