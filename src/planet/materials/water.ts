@@ -1,10 +1,9 @@
 import { Color, Gfx } from 'engine';
 import { colorToBigInt } from 'engine/color';
-import { Material } from 'engine/material';
-import { UniformBuffer } from 'engine/uniform_buffer';
+import { StorageMaterial } from 'engine/storage_material';
 
-export class WaterMaterial extends Material {
-	readonly uniform: UniformBuffer;
+export class WaterMaterial extends StorageMaterial {
+	static instanceSize = 3 * 4;
 	forwardRender = true;
 	private _deepColor: bigint;
 	private _shallowColor: bigint;
@@ -15,7 +14,7 @@ export class WaterMaterial extends Material {
 		shallowColor?: number | bigint | Color,
 		deepColor?: number | bigint | Color,
 	) {
-		super();
+		super(gfx);
 		if (Array.isArray(shallowColor)) {
 			this._shallowColor = colorToBigInt(shallowColor);
 		} else {
@@ -26,23 +25,13 @@ export class WaterMaterial extends Material {
 		} else {
 			this._deepColor = BigInt(deepColor||0);
 		}
-		this.uniform = new UniformBuffer(gfx, [
-			//['shallowColor', 'u32'],
-			//['deepColor', 'u32'],
-			['seed', 'u32'],
+	}
+
+	toArrayBuffer() {
+		return new Uint32Array([
+			this.seed,
+			Number(this._shallowColor),
+			Number(this._deepColor),
 		]);
-		this.updateUniform();
-	}
-
-	updateUniform() {
-		this.uniform.replace( {
-			//shallowColor: this._shallowColor,
-			//deepColor: this._deepColor,
-			seed: this.seed,
-		});
-	}
-
-	bindingResource(): GPUBindingResource {
-		return this.uniform.bindingResource();
 	}
 }

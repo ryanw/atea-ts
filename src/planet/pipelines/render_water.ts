@@ -5,7 +5,7 @@ import { Camera } from 'engine/camera';
 import { SimpleMesh } from 'engine/mesh';
 import { Pawn } from 'engine/pawn';
 import { MaterialPipeline } from 'engine/pipelines/material';
-import { oldMeshInstanceLayout } from 'engine/pipelines/render_mesh';
+import { meshInstanceLayout } from 'engine/pipelines/render_mesh';
 
 export class RenderWaterPipeline extends MaterialPipeline {
 	private pipeline!: GPURenderPipeline;
@@ -45,7 +45,9 @@ export class RenderWaterPipeline extends MaterialPipeline {
 				{
 					binding: 2,
 					visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-					buffer: {}
+					buffer: {
+						type: 'read-only-storage'
+					}
 				},
 				// Vertices
 				{
@@ -67,7 +69,7 @@ export class RenderWaterPipeline extends MaterialPipeline {
 			vertex: {
 				module: shader,
 				entryPoint: 'vs_main',
-				buffers: [oldMeshInstanceLayout]
+				buffers: [meshInstanceLayout]
 			},
 			fragment: {
 				module: shader,
@@ -84,7 +86,7 @@ export class RenderWaterPipeline extends MaterialPipeline {
 		this.fillDepthPipeline = device.createRenderPipeline(pipelineDescriptor);
 	}
 
-	buildRenderPipeline(source?: string) {
+	buildRenderPipeline() {
 		const { device } = this.gfx;
 
 		const shader = device.createShaderModule({
@@ -111,7 +113,9 @@ export class RenderWaterPipeline extends MaterialPipeline {
 				{
 					binding: 2,
 					visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-					buffer: {}
+					buffer: {
+						type: 'read-only-storage'
+					}
 				},
 				// Vertices
 				{
@@ -146,7 +150,7 @@ export class RenderWaterPipeline extends MaterialPipeline {
 			vertex: {
 				module: shader,
 				entryPoint: 'vs_main',
-				buffers: [oldMeshInstanceLayout]
+				buffers: [meshInstanceLayout]
 			},
 			fragment: {
 				module: shader,

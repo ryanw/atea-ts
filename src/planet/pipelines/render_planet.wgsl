@@ -1,42 +1,7 @@
-struct PackedVertex {
-	position: array<f32, 3>,
-	normal: array<f32, 3>,
-	color: u32,
-	alt: f32,
-}
-
-struct Vertex {
-	position: vec3f,
-	normal: vec3f,
-	color: u32,
-	alt: f32,
-}
-
-struct Material {
-	color: u32,
-	seed: u32,
-	seaLevel: f32,
-}
-
 struct PlanetMaterial {
 	seed: u32,
 	landColor: u32,
 	seaColor: u32,
-}
-
-struct VertexIn {
-	@builtin(vertex_index) id: u32,
-	@builtin(instance_index) instance: u32,
-	// Instance
-	@location(3) transform0: vec4f,
-	@location(4) transform1: vec4f,
-	@location(5) transform2: vec4f,
-	@location(6) transform3: vec4f,
-	@location(7) materialIndex: u32,
-	@location(8) instanceColors: vec3<u32>,
-	@location(9) variantIndex: u32,
-	@location(10) variantBlend: f32,
-	@location(11) live: u32,
 }
 
 struct VertexOut {
@@ -57,32 +22,6 @@ struct FragmentOut {
 	@location(1) normal: vec4f,
 	@location(2) metaOutput: u32,
 }
-
-struct Camera {
-	view: mat4x4f,
-	projection: mat4x4f,
-	invProjection: mat4x4f,
-	resolution: vec2f,
-	t: f32,
-	isShadowMap: u32,
-}
-
-struct Pawn {
-	model: mat4x4f,
-	id: u32,
-	vertexCount: u32,
-	variantCount: u32,
-	variantIndex: u32,
-}
-
-struct Shadow {
-	position: vec3f,
-	radius: f32,
-	umbra: f32,
-	shape: u32,
-	color: u32,
-}
-
 
 @group(0) @binding(0)
 var<uniform> camera: Camera;
@@ -215,6 +154,9 @@ fn pointToUV(point: vec3<f32>) -> vec2<f32> {
 	return lonLatToUV(pointToLonLat(point));
 }
 
+@import "./pawn.inc.wgsl";
+@import "./camera.inc.wgsl";
+@import "./vertex.inc.wgsl";
 @import "./terrain_noise.wgsl";
 @import "engine/shaders/noise.wgsl";
 @import "engine/shaders/color.wgsl";

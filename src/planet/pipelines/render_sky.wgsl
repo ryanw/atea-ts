@@ -23,15 +23,6 @@ struct FragmentOut {
 	@location(2) metaOutput: u32,
 }
 
-struct Shadow {
-	position: vec3f,
-	radius: f32,
-	umbra: f32,
-	shape: u32,
-	color: u32,
-}
-
-
 @group(0) @binding(0)
 var<uniform> camera: Camera;
 
