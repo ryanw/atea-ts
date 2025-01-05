@@ -2,6 +2,7 @@ struct Instance {
 	transform: array<f32, 16>,
 	colors: array<u32, 4>,
 	vertexIndex: u32,
+	vertexBlend: f32,
 	live: u32,
 }
 
@@ -124,6 +125,8 @@ fn main(@builtin(global_invocation_id) globalId: vec3<u32>) {
 		colorToUint(color),
 	);
 	particle.velocity = array(velocity.x, velocity.y, velocity.z);
+	instance.vertexIndex = 0;
+	instance.vertexBlend = 1.0;
 	instance.transform = array(
 		1.0, 0.0, 0.0, 0.0,
 		0.0, 1.0, 0.0, 0.0,

@@ -1,5 +1,5 @@
 import { DEADZONE, Key, XboxAxis, XboxButton } from 'engine/input';
-import { add, normalize, scale } from 'engine/math/vectors';
+import { add, magnitudeSquared, normalize, scale, subtract } from 'engine/math/vectors';
 import { Vector3 } from 'engine/math';
 import { multiply, multiplyVector, rotation, rotationFromQuaternion } from 'engine/math/transform';
 import { System } from 'engine/ecs/systems';
@@ -13,11 +13,8 @@ import { FollowCameraComponent } from 'engine/ecs/components/camera';
 import { GravityComponent } from '../components/gravity';
 import { MeshComponent } from 'engine/ecs/components/mesh';
 import { FocusableComponent } from '../components/focusable';
-
-export enum VehicleMode {
-	Space,
-	Lander
-}
+import { ShipComponent, ShipMode } from '../components/ship';
+import { MaterialComponent } from 'engine/ecs/components/material';
 
 export class PlayerInputSystem extends System {
 	gamepads: Array<Gamepad> = [];
@@ -25,7 +22,6 @@ export class PlayerInputSystem extends System {
 	readonly pressedKeys = new Map<Key, number>;
 	readonly axis = new Map<XboxAxis, number>;
 	readonly previousButtons: Record<number, number> = {};
-	mode: VehicleMode = VehicleMode.Space;
 	bindings: Record<string, Key> = {
 		'w': Key.Forward,
 		's': Key.Backward,
@@ -62,13 +58,59 @@ export class PlayerInputSystem extends System {
 	override async tick(dt: number, world: World) {
 		let entities;
 
+
 		entities = world.entitiesWithComponents([PlayerComponent, VelocityComponent, TransformComponent]);
 		for (const entity of entities) {
+			this.updateMorph(dt, world, entity)
 			this.updateMovement(dt, world, entity);
 		}
 		entities = world.entitiesWithComponents([FollowCameraComponent, TransformComponent]);
 		for (const entity of entities) {
 			this.updateCamera(dt, world, entity);
+		}
+	}
+
+	updateMorph(dt: number, world: World, entity: Entity) {
+		const { min, pow } = Math;
+		const ship = world.getComponent(entity, ShipComponent);
+		if (!ship) return;
+		const tran = world.getComponent(entity, TransformComponent);
+		if (!tran) return;
+		const material = world.getComponent(entity, MaterialComponent);
+		if (!material) return;
+
+		let targetScale = tran.scale;
+		const t = min(1.0, dt * 10.0);
+		switch (ship.mode) {
+			case ShipMode.Space:
+				if (material.variant !== 0 && (material.variant | 0) !== 0) {
+					material.variant = 1.0;
+				}
+				material.variant -= t;
+				if (material.variant < 0) {
+					material.variant = 0;
+				}
+				break;
+
+			case ShipMode.Lander:
+				if (material.variant !== 1 && (material.variant | 0) !== 0) {
+					material.variant = 0.0;
+				}
+				material.variant += t;
+				if (material.variant > 1) {
+					material.variant = 1;
+				}
+				break;
+		}
+
+		const diff = subtract(targetScale, tran.scale);
+
+		const ms = magnitudeSquared(diff);
+		if (ms > 0.001) {
+			tran.scale = add(tran.scale, scale(diff, t));
+		}
+		else {
+			tran.scale = targetScale;
 		}
 	}
 
@@ -90,11 +132,15 @@ export class PlayerInputSystem extends System {
 
 	updateMovement(dt: number, world: World, entity: Entity) {
 		this.updateGamepads();
-		switch (this.mode) {
-			case VehicleMode.Space:
+
+		const ship = world.getComponent(entity, ShipComponent);
+		if (!ship) return;
+
+		switch (ship.mode) {
+			case ShipMode.Space:
 				this.updateSpace(dt, world, entity);
 				break;
-			case VehicleMode.Lander:
+			case ShipMode.Lander:
 				this.updateLander(dt, world, entity);
 				break;
 		}
@@ -103,7 +149,7 @@ export class PlayerInputSystem extends System {
 			let adjust = 1;
 			switch (key) {
 				case Key.ToggleMode:
-					this.mode = this.mode === VehicleMode.Lander ? VehicleMode.Space : VehicleMode.Lander;
+					ship.mode = ship.mode === ShipMode.Lander ? ShipMode.Space : ShipMode.Lander;
 					break;
 
 				case Key.PrevCamera:

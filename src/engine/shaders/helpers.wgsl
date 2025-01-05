@@ -4,6 +4,29 @@ fn ss(e0: f32, e1: f32, t: f32) -> f32 {
 	return x * x * (3 - 2 * x);
 }
 
+fn euclidMod(n: i32, m: i32) -> i32 {
+	var x = n % m;
+	if n < 0 {
+		x += m;
+	}
+	return x;
+}
+
+fn euclidModu(n: u32, m: u32) -> u32 {
+	var x = n % m;
+	if n < 0 {
+		x += m;
+	}
+	return x;
+}
+fn euclidModf(n: f32, m: f32) -> f32 {
+	var x = n % m;
+	if n < 0.0 {
+		x += m;
+	}
+	return x;
+}
+
 fn worldFromScreen(coord : vec2f, depth_sample: f32, mvp: mat4x4f) -> vec3f {
   // reconstruct world-space position from the screen coordinate.
   let posClip = vec4(coord.x * 2.0 - 1.0, (1.0 - coord.y) * 2.0 - 1.0, depth_sample, 1.0);

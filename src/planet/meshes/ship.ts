@@ -5,31 +5,38 @@ import { scale } from 'engine/math/vectors';
 
 const { cos, sin } = Math;
 
+function toVertex(position: Point3, i: number): ColorVertex {
+	let color = 0xffffffffn;
+	// Every even triangle is on the top
+	const isTop = (i / 3 | 0) % 2 == 0;
+	if (isTop && i < 12) {
+		// First tri is the window
+		color = 0xff000000n;
+	}
+	else if (isTop) {
+		color = 0xff9c31a3n;
+	}
+	else {
+		color = 0xff4dB2ffn;
+	}
+	return {
+		softness: 0,
+		position: [...position],
+		normal: [0, 0, 0],
+		color,
+	};
+}
+
 export class ShipMesh extends SimpleMesh {
 	constructor(gfx: Gfx) {
-		const vertices: Array<ColorVertex> = buildShipMesh((position, i) => {
-			let color = 0xff0000ff;
-			// Every even triangle is on the top
-			const isTop = (i / 3 | 0) % 2 == 0;
-			if (isTop && i < 12) {
-				// First tri is the window
-				color = 0xff000000;
-			}
-			else if (isTop) {
-				color = 0xffff66B2;
-			}
-			else {
-				color = 0xff4dB2ff;
-			}
-			return {
-				softness: 0,
-				position: [...position],
-				normal: [0, 0, 0],
-				color: BigInt(color),
-			};
-		});
-		calculateNormals(vertices);
-		super(gfx, vertices);
+		const landerVertices: Array<ColorVertex> = buildLanderMesh(toVertex);
+		calculateNormals(landerVertices);
+		const spaceVertices: Array<ColorVertex> = buildSpaceMesh(toVertex);
+		calculateNormals(spaceVertices);
+		super(gfx, [...landerVertices, ...spaceVertices]);
+		// Procedurally generated in shader
+		this.vertexCount = landerVertices.length;
+		this.variantCount = 2;
 	}
 }
 
@@ -59,11 +66,18 @@ function buildNGon(sides: number, size: number = 1): Array<Point3> {
 	return hull;
 }
 
-export function buildShipMesh<T>(callback: (position: Point3, index: number) => T): Array<T> {
-	const hull = buildNGon(7, 0.0666);
+export function buildLanderMesh<T>(callback: (position: Point3, index: number) => T): Array<T> {
+	const size = 0.066;
+	return buildNGon(8, size).map(callback);
+}
+export function buildSpaceMesh<T>(callback: (position: Point3, index: number) => T): Array<T> {
+	const size = 0.066;
+	const hull = buildNGon(8, size);
 	return hull.map((p, i) => {
-		const s = 1.0 - (0.3 + p[2]);
-		const q = scale(p, [s, 1, 1]);
+		const sx = 1.0 - (p[2]/size);
+		const sy = 1.0 - (p[2]/size);
+		const sz = 1.7;
+		const q = scale(p, [sx, sy, sz]);
 		return callback(q, i);
 	});
 }

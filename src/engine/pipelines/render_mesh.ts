@@ -247,10 +247,12 @@ export const meshInstanceLayout: GPUVertexBufferLayout = {
 		{ shaderLocation: 6, offset: 48, format: 'float32x4' },
 		// Instance Colors
 		{ shaderLocation: 7, offset: 64, format: 'uint32x4' },
-		// Vertex Index
+		// Variant Index
 		{ shaderLocation: 8, offset: 80, format: 'uint32' },
+		// Variant Blend
+		{ shaderLocation: 9, offset: 84, format: 'float32' },
 		// Live
-		{ shaderLocation: 9, offset: 84, format: 'uint32' },
+		{ shaderLocation: 10, offset: 88, format: 'uint32' },
 	],
-	arrayStride: 88,
+	arrayStride: 92,
 };

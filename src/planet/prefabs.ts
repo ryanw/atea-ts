@@ -16,6 +16,7 @@ import { Planet } from "./galaxy";
 import { FollowComponent } from "engine/ecs/components/follow";
 import { FocusableComponent } from "./components/focusable";
 import { MetaComponent } from "./components/meta";
+import { ShipComponent, ShipMode } from "./components/ship";
 
 export function orbitCamera(world: World, target: Entity): Entity {
 	return world.createEntity([
@@ -129,17 +130,13 @@ export function bug(world: World, position: Point3 = [0, 0, 0]): Entity {
 }
 
 export function player(world: World, position: Point3 = [0, 0, 0], velocity: Vector3 = [0, 0, 0]): Entity {
-	const { PI } = Math;
 	const scale = 3.0;
 	return world.createEntity([
 		new MetaComponent("Player"),
+		new ShipComponent(ShipMode.Space),
 		new PlayerComponent(),
 		new PhysicsComponent(),
-		new TransformComponent(
-			position,
-			[0, 0, 0, 1],//quaternionFromEuler(PI / -1.75, -0.0, 0.0),
-			[scale, scale, scale],
-		),
+		new TransformComponent(position, [0, 0, 0, 1], [scale, scale, scale]),
 		new VelocityComponent(velocity),
 		new MeshComponent('player-ship'),
 		new MaterialComponent('ship-material'),

@@ -30,7 +30,8 @@ struct VertexIn {
 	@location(6) transform3: vec4f,
 	@location(7) instanceColor: vec4<u32>,
 	@location(8) variantIndex: u32,
-	@location(9) live: u32,
+	@location(9) variantBlend: f32,
+	@location(10) live: u32,
 }
 
 struct VertexOut {
@@ -114,16 +115,41 @@ fn vs_main(in: VertexIn) -> VertexOut {
 	}
 	let emissive = (material.skin & SKIN_EMISSIVE) != 0;
 
-	let variantIndex = in.variantIndex + pawn.variantIndex;
-	let vertexOffset = (variantIndex % pawn.variantCount) * pawn.vertexCount;
-	let idx = in.id + vertexOffset;
-	let packedVertex = vertices[idx];
-	let v = Vertex(
-		vec3(packedVertex.position[0], packedVertex.position[1], packedVertex.position[2]),
-		vec3(packedVertex.normal[0], packedVertex.normal[1], packedVertex.normal[2]),
-		packedVertex.color,
-		packedVertex.softness,
-	);
+	let variantIndex0 = in.variantIndex + pawn.variantIndex;
+	let vertexOffset0 = euclidModu(variantIndex0, pawn.variantCount) * pawn.vertexCount;
+	let idx0 = in.id + vertexOffset0;
+	let pkv0 = vertices[idx0];
+
+	var v = Vertex();
+	if (in.variantBlend < 1.0) {
+		let variantIndex1 = in.variantIndex + pawn.variantIndex - 1u;
+		let vertexOffset1 = euclidModu(variantIndex1, pawn.variantCount) * pawn.vertexCount;
+		let idx1 = in.id + vertexOffset1;
+		let pkv1 = vertices[idx1];
+
+		v = Vertex(
+			mix(
+				vec3(pkv1.position[0], pkv1.position[1], pkv1.position[2]),
+				vec3(pkv0.position[0], pkv0.position[1], pkv0.position[2]),
+				in.variantBlend
+			),
+			mix(
+				vec3(pkv1.normal[0], pkv1.normal[1], pkv1.normal[2]),
+				vec3(pkv0.normal[0], pkv0.normal[1], pkv0.normal[2]),
+				in.variantBlend
+			),
+			pkv1.color,
+			mix(pkv1.softness, pkv0.softness, in.variantBlend),
+		);
+	} else {
+		v = Vertex(
+			vec3(pkv0.position[0], pkv0.position[1], pkv0.position[2]),
+			vec3(pkv0.normal[0], pkv0.normal[1], pkv0.normal[2]),
+			pkv0.color,
+			pkv0.softness,
+		);
+	}
+
 
 	let transform = mat4x4(
 		in.transform0,

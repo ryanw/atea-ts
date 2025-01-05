@@ -205,20 +205,38 @@ export class WorldGraphics {
 					instanceColor1: colors[1],
 					instanceColor2: colors[2],
 					instanceColor3: colors[3],
-					variantIndex: BigInt(variantIndex),
+					variantIndex: material.variantIndex,
+					variantBlend: material.variantIndex,
 					live: 1,
 				});
 				this.meshes.set(entity, [idx, pawn]);
 			}
 
-			// Update the transform of the instance
 			// FIXME better field updating
-
+			// Update the transform of the instance
 			device.queue.writeBuffer(
 				pawn.object.instanceBuffer,
 				idx * pawn.object.instanceSize,
 				new Float32Array(transform),
 			);
+			// Update variant
+			const materialComp = world.getComponent(entity, MaterialComponent);
+			if (materialComp) {
+				const material = this.getMaterialForComponent(materialComp);
+				material.variantIndex = materialComp.variant | 0;
+				material.variantBlend = materialComp.variant - material.variantIndex;
+				const bufferOffset = idx * pawn.object.instanceSize + 16*4 + 4 * 4;
+				device.queue.writeBuffer(
+					pawn.object.instanceBuffer,
+					bufferOffset,
+					new Uint32Array([material.variantIndex]),
+				);
+				device.queue.writeBuffer(
+					pawn.object.instanceBuffer,
+					bufferOffset + 4,
+					new Float32Array([material.variantBlend]),
+				);
+			}
 		}
 
 		// Remove stale meshes

@@ -15,13 +15,15 @@ export enum Skin {
 export abstract class Material {
 	writeDepth = true;
 	forwardRender = false;
+	variantIndex: number = 0;
+	variantBlend: number = 1.0;
 	abstract bindingResource(): GPUBindingResource;
 	instanceColors(): BigVector4 {
 		return [
-			0xff000000n,
-			0xff000000n,
-			0xff000000n,
-			0xff000000n,
+			0xffffffffn,
+			0xffffffffn,
+			0xffffffffn,
+			0xffffffffn,
 		];
 	}
 }

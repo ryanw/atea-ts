@@ -7,6 +7,7 @@ export class MaterialComponent extends Component {
 	public emissive = false;
 	public color: Color = [255, 0, 0, 255];
 	public noise: Vector4 = [0, 0, 0, 0];
+	public variant: number = 0.0;
 	public custom?: ResourceId;
 
 	constructor(values?: ResourceId | Partial<MaterialComponent>) {

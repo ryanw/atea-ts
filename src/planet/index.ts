@@ -147,9 +147,8 @@ async function initGraphics(gfx: Gfx, planetSeed: number = 0): Promise<WorldGrap
 	graphics.insertResource('tiny-cube', new CubeMesh(gfx, [0, 0, 0], 0.01));
 
 
-	const playerMesh = new ShipMesh(gfx);
-	graphics.insertResource('player-ship', playerMesh);
-	graphics.insertResource('ship-material', new SimpleMaterial(gfx, 0xffff00000n));
+	graphics.insertResource('player-ship', new ShipMesh(gfx));
+	graphics.insertResource('ship-material', new SimpleMaterial(gfx, 0xfffffffffn));
 
 	return graphics;
 }
