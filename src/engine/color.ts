@@ -1,6 +1,19 @@
 import { Vector4 } from './math';
 
 export type Color = Vector4;
+export type ColorLike = Color | number | bigint;
+
+export function toColor(color: ColorLike): Color {
+	if (Array.isArray(color)) {
+		return color;
+	}
+	color = Number(color || 0);
+	const r = color & 0xff;
+	const g = (color >> 8) & 0xff;
+	const b = (color >> 16) & 0xff;
+	const a = (color >> 24) & 0xff;
+	return [r, g, b, a];
+}
 
 export function hsl(h: number, s: number, ll: number, a: number = 1.0): Color {
 	const l = Math.max(0, Math.min(1, ll));
@@ -24,15 +37,19 @@ export function hsl(h: number, s: number, ll: number, a: number = 1.0): Color {
 	return [r, g, b, a * 255];
 }
 
-export function colorToInt(color: Color | number): number {
+export function colorToInt(color: ColorLike): number {
+	if (!color) return 0;
 	if (typeof color === 'number') return color;
+	if (typeof color === 'bigint') return Number(color);
 	const [r, g, b, a] = color;
 	return (a << 24) | (b << 16) | (g << 8) | r;
 }
-export function colorToBigInt(color: Color): bigint {
+export function colorToBigInt(color: ColorLike): bigint {
+	if (!color) return 0n;
 	if (typeof color === 'bigint') return color;
+	if (typeof color === 'number') return BigInt(color);
 	const [r, g, b, a] = color;
-	return (BigInt(a|0) << BigInt(24)) | (BigInt(b|0) << BigInt(16)) | (BigInt(g|0) << BigInt(8)) | BigInt(r|0);
+	return (BigInt(a | 0) << BigInt(24)) | (BigInt(b | 0) << BigInt(16)) | (BigInt(g | 0) << BigInt(8)) | BigInt(r | 0);
 }
 
 function hueToRGB(p: number, q: number, ot: number): number {

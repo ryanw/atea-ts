@@ -55,16 +55,20 @@ export class StorageBuffer<T extends ToArrayBuffer> {
 		}
 	}
 
+	reserve(): InstanceId {
+		let instanceId = this.getNextId();
+		if (instanceId > this.capacity) {
+			this.resize(Math.ceil(this.capacity * 1.5));
+		}
+		return instanceId;
+	}
+
 	push(item: T): InstanceId {
 		const array = item.toArrayBuffer();
 		if (array.byteLength !== this.instanceSize) {
 			throw new Error(`Invalid instance. Expected ${this.instanceSize} bytes. Got ${array.byteLength} bytes`);
 		}
-
-		let instanceId = this.getNextId();
-		if (instanceId > this.capacity) {
-			this.resize(Math.ceil(this.capacity * 1.5));
-		}
+		const instanceId = this.reserve();
 		this.writeInstance(instanceId, item);
 		return instanceId;
 	}
@@ -110,14 +114,15 @@ export abstract class StorageMaterial extends Material implements ToArrayBuffer 
 
 		const Self = this.self();
 		if (!Self.storage) {
-			Self.storage = new StorageBuffer(gfx, Self.instanceSize, 100);
+			Self.storage = new StorageBuffer(gfx, Self.instanceSize);
 			Self.finalization = new FinalizationRegistry(Self.finalize.bind(Self));
 		}
 
-		this.instanceId = Self.storage.push(this);
+		this.instanceId = Self.storage.reserve();
 
 		// Register for garbage colllection cleanup
 		Self.finalization.register(this, this.instanceId);
+		setTimeout(() => this.write(), 1);
 	}
 
 	/**

@@ -64,7 +64,7 @@ export class RenderMeshPipeline extends MaterialPipeline {
 			vertex: {
 				module: shader,
 				entryPoint: 'vs_main',
-				buffers: [meshInstanceLayout]
+				buffers: [oldMeshInstanceLayout]
 			},
 			fragment: {
 				module: shader,
@@ -112,7 +112,7 @@ export class RenderMeshPipeline extends MaterialPipeline {
 			vertex: {
 				module: shader,
 				entryPoint: 'vs_main',
-				buffers: [meshInstanceLayout],
+				buffers: [oldMeshInstanceLayout],
 			},
 			fragment: {
 				module: shader,
@@ -237,7 +237,7 @@ export class RenderMeshPipeline extends MaterialPipeline {
 	}
 }
 
-export const meshInstanceLayout: GPUVertexBufferLayout = {
+export const oldMeshInstanceLayout: GPUVertexBufferLayout = {
 	stepMode: 'instance',
 	attributes: [
 		// Transform
@@ -253,6 +253,28 @@ export const meshInstanceLayout: GPUVertexBufferLayout = {
 		{ shaderLocation: 9, offset: 84, format: 'float32' },
 		// Live
 		{ shaderLocation: 10, offset: 88, format: 'uint32' },
+	],
+	arrayStride: 92,
+};
+
+export const meshInstanceLayout: GPUVertexBufferLayout = {
+	stepMode: 'instance',
+	attributes: [
+		// Transform
+		{ shaderLocation: 3, offset: 0, format: 'float32x4' },
+		{ shaderLocation: 4, offset: 16, format: 'float32x4' },
+		{ shaderLocation: 5, offset: 32, format: 'float32x4' },
+		{ shaderLocation: 6, offset: 48, format: 'float32x4' },
+		// Material index
+		{ shaderLocation: 7, offset: 64, format: 'uint32' },
+		// Instance Colors
+		{ shaderLocation: 8, offset: 68, format: 'uint32x3' },
+		// Variant Index
+		{ shaderLocation: 9, offset: 80, format: 'uint32' },
+		// Variant Blend
+		{ shaderLocation: 10, offset: 84, format: 'float32' },
+		// Live
+		{ shaderLocation: 11, offset: 88, format: 'uint32' },
 	],
 	arrayStride: 92,
 };

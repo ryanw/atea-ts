@@ -1,4 +1,4 @@
-import { Point3 } from "engine/math";
+import { Point3, Vector3 } from "engine/math";
 import { quaternionFromEuler } from "engine/math/quaternions";
 import { bigIntRandomizer, bigRandomizer } from "engine/noise";
 import { magnitude } from "engine/math/vectors";
@@ -95,18 +95,25 @@ export class Planet {
 	readonly radius: number;
 	readonly density: number;
 	readonly waterLevel: number;
+	readonly terrainSeed: bigint;
+	readonly landColor: Color;
+	readonly waterColor: Color;
 
 	constructor(
 		readonly planetSeed: bigint,
 		orbitRadius: number,
 	) {
 		const rng = bigRandomizer(planetSeed);
+		const rngi = bigIntRandomizer(planetSeed + 41313n);
+		this.terrainSeed = rngi();
 		this.density = rng();
 		this.waterLevel = rng(0, 100);
 		this.radius = rng(200, 700);
 		const orbitOffset = rng(0.0, Math.PI * 2);
 		const orbitSpeed = rng(0.0, 1.0);
 		const orbitTilt = quaternionFromEuler(0, 0, rng(0.0, Math.PI / 6.0));
+		this.landColor = hsl(rng(), 0.5, 0.65);
+		this.waterColor = hsl(rng(), 0.5, 0.65);
 
 		this.orbit = new Orbit(
 			orbitRadius,

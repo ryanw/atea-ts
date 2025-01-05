@@ -5,12 +5,10 @@ import { SimpleMesh } from 'engine/mesh';
 import { Pawn } from 'engine/pawn';
 import { MaterialPipeline } from 'engine/pipelines/material';
 import { GBuffer } from 'engine/gbuffer';
-import { SkyMaterial } from '../materials/sky';
 import { meshInstanceLayout } from 'engine/pipelines/render_mesh';
 
 export class RenderSkyPipeline extends MaterialPipeline {
 	private pipeline!: GPURenderPipeline;
-	private sampler!: GPUSampler;
 
 	constructor(gfx: Gfx) {
 		super(gfx);
@@ -26,7 +24,7 @@ export class RenderSkyPipeline extends MaterialPipeline {
 			code: renderSource
 		});
 
-		const cameraBindGroupLayout = device.createBindGroupLayout({
+		const bindGroupLayout = device.createBindGroupLayout({
 			label: 'RenderSkyPipeline Bind Group Layout',
 			entries: [
 				// Camera
@@ -45,7 +43,9 @@ export class RenderSkyPipeline extends MaterialPipeline {
 				{
 					binding: 2,
 					visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-					buffer: {}
+					buffer: {
+						type: 'read-only-storage',
+					}
 				},
 				// Vertices
 				{
@@ -55,28 +55,13 @@ export class RenderSkyPipeline extends MaterialPipeline {
 						type: 'read-only-storage',
 					}
 				},
-				// Colour texture buffer
-				{
-					binding: 4,
-					visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-					texture: {
-						sampleType: 'float',
-						viewDimension: '1d'
-					}
-				},
-				{
-					binding: 5,
-					visibility: GPUShaderStage.FRAGMENT,
-					sampler: {}
-				},
 			]
 		});
 		const pipelineLayout = device.createPipelineLayout({
-			bindGroupLayouts: [cameraBindGroupLayout],
+			bindGroupLayouts: [bindGroupLayout],
 		});
 
 		const pipelineDescriptor: GPURenderPipelineDescriptor = {
-			label: 'RenderSkyPipeline',
 			layout: pipelineLayout,
 			vertex: {
 				module: shader,
@@ -113,17 +98,6 @@ export class RenderSkyPipeline extends MaterialPipeline {
 			}
 		};
 		this.pipeline = device.createRenderPipeline(pipelineDescriptor);
-		this.sampler = device.createSampler({
-			addressModeU: 'repeat',
-			addressModeV: 'repeat',
-			addressModeW: 'repeat',
-			magFilter: 'nearest',
-			minFilter: 'nearest',
-			mipmapFilter: 'nearest',
-			lodMinClamp: 0,
-			lodMaxClamp: 1000,
-			maxAnisotropy: 1,
-		});
 	}
 
 	drawBatch(encoder: GPUCommandEncoder, pawns: Array<Pawn<SimpleMesh>>, camera: Camera, target: GBuffer) {
@@ -164,17 +138,13 @@ export class RenderSkyPipeline extends MaterialPipeline {
 				continue;
 			}
 			const bindGroup = device.createBindGroup({
-				label: 'RenderPlanetPipeline Pass Bind Group',
+				label: 'RenderSkyPipeline Pass Bind Group',
 				layout: this.pipeline.getBindGroupLayout(0),
 				entries: [
 					{ binding: 0, resource: camera.uniform.bindingResource() },
 					{ binding: 1, resource: pawn.bindingResource() },
 					{ binding: 2, resource: pawn.material.bindingResource() },
 					{ binding: 3, resource: { buffer: pawn.object.vertexBuffer } },
-					{ binding: 4, resource: (pawn.material as SkyMaterial).colors.createView({
-						dimension: '1d'
-					}) },
-					{ binding: 5, resource: this.sampler },
 				],
 			});
 			pass.setBindGroup(0, bindGroup);

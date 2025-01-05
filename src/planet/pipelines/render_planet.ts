@@ -42,7 +42,9 @@ export class RenderPlanetPipeline extends MaterialPipeline {
 				{
 					binding: 2,
 					visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-					buffer: {}
+					buffer: {
+						type: 'read-only-storage'
+					}
 				},
 				// Vertices
 				{

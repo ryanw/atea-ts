@@ -18,6 +18,12 @@ struct Material {
 	seaLevel: f32,
 }
 
+struct PlanetMaterial {
+	seed: u32,
+	landColor: u32,
+	seaColor: u32,
+}
+
 struct VertexIn {
 	@builtin(vertex_index) id: u32,
 	@builtin(instance_index) instance: u32,
@@ -26,10 +32,11 @@ struct VertexIn {
 	@location(4) transform1: vec4f,
 	@location(5) transform2: vec4f,
 	@location(6) transform3: vec4f,
-	@location(7) instanceColors: vec4<u32>,
-	@location(8) variantIndex: u32,
-	@location(9) variantBlend: f32,
-	@location(10) live: u32,
+	@location(7) materialIndex: u32,
+	@location(8) instanceColors: vec3<u32>,
+	@location(9) variantIndex: u32,
+	@location(10) variantBlend: f32,
+	@location(11) live: u32,
 }
 
 struct VertexOut {
@@ -42,8 +49,7 @@ struct VertexOut {
 	@location(5) modelNormal: vec3f,
 	@location(6) alt: f32,
 	@location(7) @interpolate(flat) seed: u32,
-	@location(8) @interpolate(flat) triangleId: u32,
-	@location(9) @interpolate(flat) quadId: u32,
+	@location(8) @interpolate(flat) materialIndex: u32,
 }
 
 struct FragmentOut {
@@ -85,7 +91,7 @@ var<uniform> camera: Camera;
 var<uniform> pawn: Pawn;
 
 @group(0) @binding(2)
-var<uniform> material: Material;
+var<storage, read> materials: array<PlanetMaterial>;
 
 @group(0) @binding(3)
 var<storage, read> vertices: array<PackedVertex>;
@@ -98,6 +104,8 @@ fn vs_main(in: VertexIn) -> VertexOut {
 		return out;
 	}
 
+	let material = materials[in.materialIndex];
+	let seaLevel = 0.0;
 	let variantIndex = in.variantIndex + pawn.variantIndex;
 	let seed = material.seed + 1000 * variantIndex;
 
@@ -124,7 +132,7 @@ fn vs_main(in: VertexIn) -> VertexOut {
 	let mvp = camera.projection * camera.view;
 
 	let scale = 1.0/2.0;
-	let offsetPoint = terrainPoint(scale, v.position, 3, seed, material.seaLevel);
+	let offsetPoint = terrainPoint(scale, v.position, 3, seed, seaLevel);
 	var p = offsetModel * vec4(offsetPoint, 1.0);
 	//var p = offsetModel * vec4(v.position, 1.0);
 	var position = mvp * p;
@@ -133,12 +141,11 @@ fn vs_main(in: VertexIn) -> VertexOut {
 	out.uv = v.position.xy * 0.5 + 0.5;
 	out.originalPosition = v.position;
 	out.color = vec4(1.0);
-	out.triangleId = in.id / 3u;
-	out.quadId = in.id / 4u;
 	out.normal = normal;
 	out.alt = v.alt;
 
 	out.seed = seed;
+	out.materialIndex = in.materialIndex;
 
 	return out;
 }
@@ -152,16 +159,15 @@ fn fs_main(in: VertexOut) -> FragmentOut {
 		discard;
 	}
 
-	let maxOctaves = 5.0;
-	let r0 = rnd3u(vec3(in.seed + 1000));
-	let r1 = rnd3u(vec3(in.seed + 2000));
-	let r2 = rnd3u(vec3(in.seed + 3000));
+	let material = materials[in.materialIndex];
+	let landColor = unpack4x8unorm(material.landColor);
+	let seaColor = unpack4x8unorm(material.seaColor);
 
-	let seaColor = hsl(r0, 0.4, 0.4);
-	let landColor = hsl(r1, 0.4, 0.4);
+	let seaLevel = 0.0;
+	let maxOctaves = 5.0;
+
 
 	var p = normalize(in.originalPosition);
-	//out.normal = vec4(p * -1.0, 1.0);
 	let ll = pointToLonLat(p);
 
 	let fp = fwidth(p);
@@ -170,35 +176,23 @@ fn fs_main(in: VertexOut) -> FragmentOut {
 	res = clamp(pow(res, 1.0), 0.0, 1.0);
 
 	let octaves = i32(ceil(1.0 + res * maxOctaves));
-	var n0 = terrainNoise(p, octaves, in.seed, material.seaLevel) + 0.5;
+	var n0 = terrainNoise(p, octaves, in.seed, seaLevel) + 0.5;
 	let scale = 1.0/2.0;
-	var normal = terrainNormal(scale, p, octaves + 1, in.seed, material.seaLevel);
+	var normal = terrainNormal(scale, p, octaves + 1, in.seed, seaLevel);
 
 	var brightness = 1.0;
-	if n0 <= material.seaLevel {
-		brightness = n0 + (1.0 - material.seaLevel);
+	if n0 <= seaLevel {
+		brightness = n0 + (1.0 - seaLevel);
 		color = seaColor;
 	}
 	else {
-		brightness = n0 + material.seaLevel;
+		brightness = n0 + seaLevel;
 		color = landColor;
 	}
 
-	/*
-	if (res >= 1.0) {
-		color = vec4(1.0);
-	} else {
-		color = hsl(f32(octaves)/8.0, 0.5, 0.5);
-	}
-	*/
-
 
 	out.albedo = vec4(color.rgb * brightness, color.a);
-	//out.albedo = vec4(color.rgb, color.a);
 	out.normal = vec4(normal, 0.0);
-	out.metaOutput = in.triangleId % 0xff;
-
-	//out.albedo = hsl(res, 0.6, 0.5);
 
 	return out;
 }

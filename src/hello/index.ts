@@ -31,9 +31,13 @@ export async function main(el: HTMLCanvasElement): Promise<Gfx> {
 		const z = Math.random() * 100.0;
 		const transform = translation(x, y, z);
 		const idx = mesh.pushInstance({
-			instanceColor: 0,
+			materialIndex: 0,
+			instanceColor1: 0,
+			instanceColor2: 0,
+			instanceColor3: 0,
 			transform,
 			variantIndex: 0,
+			variantBlend: 1.0,
 			live: 1
 		});
 
@@ -46,9 +50,13 @@ export async function main(el: HTMLCanvasElement): Promise<Gfx> {
 			const transform = multiply(oldTransform, rotation(0, 1 * dt, 0));
 			pair[1] = transform;
 			mesh.writeInstance(idx, {
-				instanceColor: 0,
+				materialIndex: 0,
+				instanceColor1: 0,
+				instanceColor2: 0,
+				instanceColor3: 0,
 				transform,
 				variantIndex: 0,
+				variantBlend: 1.0,
 				live: 1
 			});
 		}

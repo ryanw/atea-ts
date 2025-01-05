@@ -5,7 +5,7 @@ import { Camera } from 'engine/camera';
 import { SimpleMesh } from 'engine/mesh';
 import { Pawn } from 'engine/pawn';
 import { MaterialPipeline } from 'engine/pipelines/material';
-import { meshInstanceLayout } from 'engine/pipelines/render_mesh';
+import { oldMeshInstanceLayout } from 'engine/pipelines/render_mesh';
 
 export class RenderWaterPipeline extends MaterialPipeline {
 	private pipeline!: GPURenderPipeline;
@@ -67,7 +67,7 @@ export class RenderWaterPipeline extends MaterialPipeline {
 			vertex: {
 				module: shader,
 				entryPoint: 'vs_main',
-				buffers: [meshInstanceLayout]
+				buffers: [oldMeshInstanceLayout]
 			},
 			fragment: {
 				module: shader,
@@ -146,7 +146,7 @@ export class RenderWaterPipeline extends MaterialPipeline {
 			vertex: {
 				module: shader,
 				entryPoint: 'vs_main',
-				buffers: [meshInstanceLayout]
+				buffers: [oldMeshInstanceLayout]
 			},
 			fragment: {
 				module: shader,

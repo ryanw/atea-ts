@@ -4,9 +4,9 @@ import shaderSource from './particle.wgsl';
 import { UniformBuffer } from 'engine/uniform_buffer';
 import { Point3, Vector3 } from 'engine/math';
 import { normalize } from 'engine/math/vectors';
-import { meshInstanceLayout } from './render_mesh';
+import { oldMeshInstanceLayout } from './render_mesh';
 
-export const INSTANCE_SIZE = meshInstanceLayout.arrayStride;
+export const INSTANCE_SIZE = oldMeshInstanceLayout.arrayStride;
 export const PARTICLE_SIZE = 4 * 4;// FIXME derive from type ParticleInstance
 
 export class ParticlePipeline extends Pipeline {

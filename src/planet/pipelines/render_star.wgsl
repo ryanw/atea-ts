@@ -1,41 +1,8 @@
-struct PackedVertex {
-	position: array<f32, 3>,
-	normal: array<f32, 3>,
-	color: u32,
-	alt: f32,
-}
-
-struct Vertex {
-	position: vec3f,
-	normal: vec3f,
-	color: u32,
-	alt: f32,
-}
-
-struct Material {
-	seed: u32,
-}
-
 struct StarMaterial {
 	coreColor: u32,
 	deepColor: u32,
 	shallowColor: u32,
 	coronaColor: u32,
-}
-
-struct VertexIn {
-	@builtin(vertex_index) id: u32,
-	@builtin(instance_index) instance: u32,
-	// Instance
-	@location(3) transform0: vec4f,
-	@location(4) transform1: vec4f,
-	@location(5) transform2: vec4f,
-	@location(6) transform3: vec4f,
-	@location(7) materialIndex: u32,
-	@location(8) instanceColors: vec3<u32>,
-	@location(9) variantIndex: u32,
-	@location(10) variantBlend: f32,
-	@location(11) live: u32,
 }
 
 struct VertexOut {
@@ -46,7 +13,6 @@ struct VertexOut {
 	@location(3) shallowColor: vec4f,
 	@location(4) deepColor: vec4f,
 	@location(5) coreColor: vec4f,
-	@location(6) alt: f32,
 	@location(7) fragPosition: vec4f,
 	@location(8) @interpolate(flat) triangleId: u32,
 	@location(9) @interpolate(flat) quadId: u32,
@@ -54,23 +20,6 @@ struct VertexOut {
 
 struct FragmentOut {
 	@location(0) color: vec4f,
-}
-
-struct Camera {
-	view: mat4x4f,
-	projection: mat4x4f,
-	invProjection: mat4x4f,
-	resolution: vec2f,
-	t: f32,
-	isShadowMap: u32,
-}
-
-struct Pawn {
-	model: mat4x4f,
-	id: u32,
-	vertexCount: u32,
-	variantCount: u32,
-	variantIndex: u32,
 }
 
 struct Shadow {
@@ -88,7 +37,7 @@ var<uniform> camera: Camera;
 var<uniform> pawn: Pawn;
 
 @group(0) @binding(2)
-var<uniform> material: Material;
+var<storage, read> materials: array<StarMaterial>;
 
 @group(0) @binding(3)
 var<storage, read> vertices: array<PackedVertex>;
@@ -96,8 +45,6 @@ var<storage, read> vertices: array<PackedVertex>;
 @group(0) @binding(4)
 var depthBuffer: texture_depth_2d;
 
-@group(0) @binding(5)
-var<storage, read> materials: array<StarMaterial>;
 
 @vertex
 fn vs_main(in: VertexIn) -> VertexOut {
@@ -150,7 +97,6 @@ fn vs_main(in: VertexIn) -> VertexOut {
 	out.triangleId = in.id / 3u;
 	out.quadId = in.id / 4u;
 	out.normal = (offsetModel * vec4(normalize(v.position), 0.0)).xyz;
-	out.alt = v.alt;
 
 	out.coronaColor = coronaColor;
 	out.shallowColor = shallowColor;
@@ -178,7 +124,6 @@ fn fs_main(in: VertexOut) -> FragmentOut {
 	var p = in.fragPosition.xyz / in.fragPosition.w;
 	let cameraPos = camera.view * vec4(0.0, 0.0, 0.0, 1.0);
 	let cp = cameraPos.xyz/cameraPos.w;
-	var viewDir = normalize(cp - p);
 
 	// Position of the back
 	let p0 = worldFromScreen(uv, in.position.z, camera.invProjection);
@@ -188,17 +133,22 @@ fn fs_main(in: VertexOut) -> FragmentOut {
 
 	// Depth between rock and star
 	let pd = (p1 - p0);
+	let npd = normalize(pd);
 
-	let pn0 = p0 + normalize(pd)*200.0;
-	let pn1 = p0 + normalize(pd)*600.0;
+	// Inner shell
+	let pn0 = p0 + npd*800.0;
+	// Outer shell
+	let pn1 = p0 - npd*200.0;
 
 	// Core noise
 	//var n0 = fractalNoise(pn0/128.0, 2) + 0.5;
 	//var n1 = fractalNoise(pn1/256.0, 3) + 0.5;
-	let n0 = fractalNoise(pn0/128.0 + camera.t/3.0, 1)/6.0;
-	let n1 = fractalNoise(pn1/256.0 + n0, 3) + 0.5;
-	let n2 = fractalNoise(pn0/311.0 + camera.t/4.0, 3)/16.0;
-	let n3 = fractalNoise(pn1/344.0 + camera.t/4.0, 3);
+	let ct = camera.t;
+	let vt = npd * ct;
+	let n0 = fractalNoise(1111 + pn0/128.0 + ct*0.3, 1)/8.0;
+	let n1 = fractalNoise(2222 + pn1/256.0 + ct*0.2 + n0, 3) + 0.5;
+	let n2 = fractalNoise(3333 + pn0/211.0 + ct*0.3, 3)/16.0;
+	let n3 = fractalNoise(4444 + pn1/344.0 + ct*0.2, 3);
 
 	var starColor = vec4(0.0);
 	
@@ -209,17 +159,18 @@ fn fs_main(in: VertexOut) -> FragmentOut {
 	// Corona noise
 	starDepth -= n2;
 
-	// Corona
 	let corona = 0.1;
 	let fuzz = corona;
 	if (starDepth < corona) {
-		coronaDepth = smoothstep(0, corona, starDepth - n2);
-		// Smooth inner edge
-		coronaDepth *= smoothstep(corona, corona-0.2, starDepth - n2)/2.0;
+		// Draw Corona
+		coronaDepth = smoothstep(0, corona, starDepth);
+		// Smooth inner edge of corona
+		coronaDepth *= smoothstep(corona, corona-0.2, starDepth)/2.0;
 
 		starColor = mix(in.coronaColor, in.shallowColor, smoothstep(corona, 0.0, coronaDepth * n1));
 		starColor.a = smoothstep(0.0, corona, starDepth);
 	} else {
+		// Draw body
 		let deepColor = mix(in.deepColor, in.coreColor, smoothstep(0.0, 1.0, pow(starDepth, 2.0)));
 		starColor = mix(in.shallowColor, deepColor, smoothstep(corona, 1.0, starDepth * n1));
 	}
@@ -247,6 +198,9 @@ fn pointToUV(point: vec3<f32>) -> vec2<f32> {
 	return lonLatToUV(pointToLonLat(point));
 }
 
+@import "./pawn.inc.wgsl";
+@import "./vertex.inc.wgsl";
+@import "./camera.inc.wgsl";
 @import "./terrain_noise.wgsl";
 @import "engine/shaders/noise.wgsl";
 @import "engine/shaders/helpers.wgsl";

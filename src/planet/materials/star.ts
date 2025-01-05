@@ -29,7 +29,6 @@ export class StarMaterial extends StorageMaterial {
 		this.shallowColor = toColorBigInt(shallowColor);
 		this.deepColor = toColorBigInt(deepColor);
 		this.coreColor = toColorBigInt(coreColor);
-		this.write();
 	}
 
 	toArrayBuffer(): ArrayBuffer {

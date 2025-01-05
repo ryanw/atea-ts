@@ -35,6 +35,7 @@ import { CubeSphere } from 'engine/meshes/cubesphere';
 import { add } from 'engine/math/vectors';
 import { SimpleMaterial } from 'engine/material';
 import { RenderStarPipeline } from './pipelines/render_star';
+import { bigRandomizer, randomizer } from 'engine/noise';
 
 const GFX_CONFIG = {
 	renderMode: 0,
@@ -48,15 +49,16 @@ const GFX_CONFIG = {
  * Start the game
  */
 export async function main(el: HTMLCanvasElement) {
+	const seed = BigInt(Math.random() * 0xffffff | 0);
 	const gfx = await initGfx(el);
 	const scene = await initScene(gfx);
 	const world = await initWorld(gfx);
-	const graphics = await initGraphics(gfx);
+	const graphics = await initGraphics(gfx, seed);
 	if (DEBUG) {
 		const gui = ui(el.parentElement!, world);
 	}
 
-	const starSystem = new StarSystem(BigInt(Math.random() * 0xffffffff | 0));
+	const starSystem = new StarSystem(seed);
 	const planets = Array.from(starSystem.planets());
 	const stars = Array.from(starSystem.stars());
 
@@ -76,9 +78,19 @@ export async function main(el: HTMLCanvasElement) {
 	}
 
 	const planetEntities: Array<[Planet, Entity, Entity]> = [];
-	for (const planet of planets) {
+	for (const [i, planet] of planets.entries()) {
+		const materialName = `planet-material-${i}`;
+		graphics.insertResource(
+			materialName,
+			new PlanetMaterial(
+				gfx,
+				planet.terrainSeed,
+				planet.landColor,
+				planet.waterColor,
+			),
+		);
 		const position = planet.positionAtTime(0.0);
-		const p = prefabs.planet(world, position, planet);
+		const p = prefabs.planet(world, materialName, position, planet);
 		const w = prefabs.water(world, position, planet);
 		planetEntities.push([planet, p, w]);
 	}
@@ -118,25 +130,25 @@ async function initScene(gfx: Gfx): Promise<Scene> {
 
 
 
-async function initGraphics(gfx: Gfx, planetSeed: number = 0): Promise<WorldGraphics> {
+async function initGraphics(gfx: Gfx, planetSeed: bigint = 0n): Promise<WorldGraphics> {
 	gfx.registerMaterials([
 		[PlanetMaterial, RenderPlanetPipeline],
 		[WaterMaterial, RenderWaterPipeline],
 		[SkyMaterial, RenderSkyPipeline],
 		[StarMaterial, RenderStarPipeline],
-		[StarMaterial, RenderStarPipeline],
 	]);
+	const { abs } = Math;
+	const rng = bigRandomizer(planetSeed);
 	const graphics = new WorldGraphics(gfx);
 
 	const planetMesh = new Icosphere(gfx, 6);
 	planetMesh.variantCount = 10000;
 	graphics.insertResource('planet', planetMesh);
-	graphics.insertResource('planet-material', new PlanetMaterial(gfx, planetSeed, 0.0));
 
 	const waterMesh = new Icosphere(gfx, 4);
 	waterMesh.variantCount = 10000;
 	graphics.insertResource('water', waterMesh);
-	graphics.insertResource('water-material', new WaterMaterial(gfx, planetSeed + 1231));
+	graphics.insertResource('water-material', new WaterMaterial(gfx, Number(planetSeed) + 1231));
 
 	const starMesh = new CubeSphere(gfx, 8);
 	graphics.insertResource('star', starMesh);
@@ -144,12 +156,11 @@ async function initGraphics(gfx: Gfx, planetSeed: number = 0): Promise<WorldGrap
 
 	const skyMesh = new InnerIcosphere(gfx, 2);
 	graphics.insertResource('sky', skyMesh);
-	graphics.insertResource('sky-material', new SkyMaterial(gfx, planetSeed + 312, [
-		hsl(0.8, 0.4, 0.05, 0.1),
-		hsl(Math.random(), 0.4, 0.2, 0.6),
-		hsl(Math.random(), 1.0, 0.5, 0.6),
-		hsl(Math.random(), 1.0, 0.5, 0.6),
-		hsl(Math.random(), 1.0, 0.5, 0.6),
+	graphics.insertResource('sky-material', new SkyMaterial(gfx, planetSeed + 312n, [
+		hsl(0, 0, 0, 1.0),
+		hsl(abs(rng() % 1.0), 0.5, 0.1, 1.0),
+		hsl(abs(rng() % 1.0), 0.8, 0.2, 1.0),
+		hsl(abs(rng() % 1.0), 0.8, 0.2, 1.0),
 	]));
 
 	graphics.insertResource('tiny-cube', new CubeMesh(gfx, [0, 0, 0], 0.01));

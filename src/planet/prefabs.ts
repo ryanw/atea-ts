@@ -75,7 +75,7 @@ export function rock(world: World, position: Point3, scale: number = 1) {
 	]);
 }
 
-export function planet(world: World, position: Point3, planet: Planet) {
+export function planet(world: World, material: string, position: Point3, planet: Planet) {
 	const scale = planet.radius;
 	return world.createEntity([
 		new MetaComponent("Planet"),
@@ -86,7 +86,7 @@ export function planet(world: World, position: Point3, planet: Planet) {
 		new FocusableComponent(),
 		new ColliderComponent(scale),
 		new VelocityComponent([0, 0, 0]),
-		new MaterialComponent('planet-material'),
+		new MaterialComponent(material),
 		new GravityComponent(10 * scale),
 	]);
 }

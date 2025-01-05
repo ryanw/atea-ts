@@ -1,35 +1,6 @@
-struct PackedVertex {
-	position: array<f32, 3>,
-	normal: array<f32, 3>,
-	color: u32,
-	alt: f32,
-}
-
-struct Vertex {
-	position: vec3f,
-	normal: vec3f,
-	color: u32,
-	alt: f32,
-}
-
-struct Material {
-	color: u32,
+struct SkyMaterial {
 	seed: u32,
-	seaLevel: f32,
-}
-
-struct VertexIn {
-	@builtin(vertex_index) id: u32,
-	@builtin(instance_index) instance: u32,
-	// Instance
-	@location(3) transform0: vec4f,
-	@location(4) transform1: vec4f,
-	@location(5) transform2: vec4f,
-	@location(6) transform3: vec4f,
-	@location(7) instanceColors: vec4<u32>,
-	@location(8) variantIndex: u32,
-	@location(9) variantBlend: f32,
-	@location(10) live: u32,
+	colors: array<u32, 4>,
 }
 
 struct VertexOut {
@@ -43,30 +14,13 @@ struct VertexOut {
 	@location(6) alt: f32,
 	@location(7) @interpolate(flat) seed: u32,
 	@location(8) @interpolate(flat) triangleId: u32,
-	@location(9) @interpolate(flat) quadId: u32,
+	@location(9) @interpolate(flat) materialIndex: u32,
 }
 
 struct FragmentOut {
 	@location(0) albedo: vec4f,
 	@location(1) normal: vec4f,
 	@location(2) metaOutput: u32,
-}
-
-struct Camera {
-	view: mat4x4f,
-	projection: mat4x4f,
-	invProjection: mat4x4f,
-	resolution: vec2f,
-	t: f32,
-	isShadowMap: u32,
-}
-
-struct Pawn {
-	model: mat4x4f,
-	id: u32,
-	vertexCount: u32,
-	variantCount: u32,
-	variantIndex: u32,
 }
 
 struct Shadow {
@@ -85,16 +39,10 @@ var<uniform> camera: Camera;
 var<uniform> pawn: Pawn;
 
 @group(0) @binding(2)
-var<uniform> material: Material;
+var<storage, read> materials: array<SkyMaterial>;
 
 @group(0) @binding(3)
 var<storage, read> vertices: array<PackedVertex>;
-
-@group(0) @binding(4)
-var colorTex: texture_1d<f32>;
-
-@group(0) @binding(5)
-var colors: sampler;
 
 @vertex
 fn vs_main(in: VertexIn) -> VertexOut {
@@ -104,8 +52,9 @@ fn vs_main(in: VertexIn) -> VertexOut {
 		return out;
 	}
 
+	let material = materials[in.materialIndex];
 	let variantIndex = in.variantIndex + pawn.variantIndex;
-	let seed = material.seed + 1000 * variantIndex;
+	let seed = material.seed + 1 * variantIndex;
 
 	let idx = in.id;
 	let packedVertex = vertices[idx];
@@ -139,7 +88,6 @@ fn vs_main(in: VertexIn) -> VertexOut {
 	out.originalPosition = v.position;
 	out.color = vec4(1.0);
 	out.triangleId = in.id / 3u;
-	out.quadId = in.id / 4u;
 	out.normal = normal;
 	out.alt = v.alt;
 
@@ -157,13 +105,8 @@ fn fs_main(in: VertexOut) -> FragmentOut {
 		discard;
 	}
 
+	let material = materials[in.materialIndex];
 	let maxOctaves = 5.0;
-	let r0 = rnd3u(vec3(in.seed + 1000));
-	let r1 = rnd3u(vec3(in.seed + 2000));
-	let r2 = rnd3u(vec3(in.seed + 3000));
-
-	let seaColor = hsl(r0, 0.4, 0.4);
-	let landColor = hsl(r1, 0.4, 0.4);
 
 	var p = normalize(in.originalPosition);
 	//out.normal = vec4(p * -1.0, 1.0);
@@ -174,10 +117,10 @@ fn fs_main(in: VertexOut) -> FragmentOut {
 	res = clamp(pow(res, 1.0), 0.0, 1.0);
 
 
-	let c0 = textureLoad(colorTex, 0, 0);
-	let c1 = textureLoad(colorTex, 1, 0);
-	let c2 = textureLoad(colorTex, 2, 0);
-	let c3 = textureLoad(colorTex, 3, 0);
+	let c0 = unpack4x8unorm(material.colors[0]);
+	let c1 = unpack4x8unorm(material.colors[1]);
+	let c2 = unpack4x8unorm(material.colors[2]);
+	let c3 = unpack4x8unorm(material.colors[3]);
 
 	let octaves = 5;
 	var n0 = skyNoise(p + vec3(camera.t/100.0, 0.0, 0.0), octaves, in.seed + 13*2);
@@ -188,9 +131,9 @@ fn fs_main(in: VertexOut) -> FragmentOut {
 	n2 = smoothstep(0.4, 1.0, n2);
 
 
-	let a0 = mix(c0, c1, n0);
-	let a1 = mix(c0, c2, n1);
-	let a2 = mix(c0, c3, n2);
+	let a0 = mix(c0, c1, n0 * c1.a);
+	let a1 = mix(c0, c2, n1 * c2.a);
+	let a2 = mix(c0, c3, n2 * c3.a);
 
 
 	out.albedo = (a0 + a1 + a2) / 3.0;
@@ -200,7 +143,7 @@ fn fs_main(in: VertexOut) -> FragmentOut {
 }
 
 fn skyNoise(p: vec3<f32>, octaves: i32, seed: u32) -> f32 {
-	var vseed = vec3(f32(seed));
+	var vseed = vec3(f32(seed) / 10000.0);
 	var acc = 0.0;
 
 	var totalAmp = 1.0;
@@ -222,5 +165,8 @@ fn skyNoise(p: vec3<f32>, octaves: i32, seed: u32) -> f32 {
 	return acc;
 }
 
+@import "./pawn.inc.wgsl";
+@import "./camera.inc.wgsl";
+@import "./vertex.inc.wgsl";
 @import "engine/shaders/noise.wgsl";
 @import "engine/shaders/color.wgsl";
