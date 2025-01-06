@@ -4,25 +4,25 @@ import { StorageMaterial } from 'engine/storage_material';
 
 export class PlanetMaterial extends StorageMaterial {
 	static instanceSize = 4 * 3;
-	readonly landColor: Color;
-	readonly waterColor: Color;
+	readonly lowLandColor: Color;
+	readonly highLandColor: Color;
 
 	constructor(
 		readonly gfx: Gfx,
 		readonly terrainSeed: bigint,
-		landColor: number | bigint | Color,
-		waterColor: number | bigint | Color,
+		lowLandColor: number | bigint | Color,
+		highLandColor: number | bigint | Color,
 	) {
 		super(gfx);
-		this.landColor = toColor(landColor);
-		this.waterColor = toColor(waterColor);
+		this.lowLandColor = toColor(lowLandColor);
+		this.highLandColor = toColor(highLandColor);
 	}
 
 	toArrayBuffer(): ArrayBuffer {
 		return new Uint32Array([
 			Number(this.terrainSeed),
-			colorToInt(this.landColor),
-			colorToInt(this.waterColor),
+			colorToInt(this.lowLandColor),
+			colorToInt(this.highLandColor),
 		]).buffer;
 	}
 }

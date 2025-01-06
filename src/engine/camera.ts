@@ -115,11 +115,15 @@ export abstract class Camera {
 	}
 
 	updateUniform() {
+		const resolution = [
+			this.gfx.canvas.width,
+			this.gfx.canvas.height,
+		];
 		this.uniform.replace({
 			view: this.view,
 			projection: this.projection,
 			invProjection: inverse(multiply(this.projection, this.view))!,
-			resolution: [32, 32],
+			resolution,
 			t: performance.now() / 1000,
 			isShadowMap: false,
 		});

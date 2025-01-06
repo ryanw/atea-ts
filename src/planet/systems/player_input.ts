@@ -80,7 +80,7 @@ export class PlayerInputSystem extends System {
 		let targetScale = tran.scale;
 		const t = min(1.0, dt * 10.0);
 		switch (ship.mode) {
-			case ShipMode.Space:
+			case ShipMode.Lander:
 				if (material.variant !== 0 && (material.variant | 0) !== 0) {
 					material.variant = 1.0;
 				}
@@ -90,7 +90,7 @@ export class PlayerInputSystem extends System {
 				}
 				break;
 
-			case ShipMode.Lander:
+			case ShipMode.Space:
 				if (material.variant !== 1 && (material.variant | 0) !== 0) {
 					material.variant = 0.0;
 				}
@@ -277,7 +277,7 @@ export class PlayerInputSystem extends System {
 			case ShipMode.Lander:
 				return [0, 1, 0];
 			case ShipMode.Space:
-				return [0, 0, 2];
+				return [0, 0, 1];
 			default:
 				return [0, 0, 0];
 
@@ -288,9 +288,10 @@ export class PlayerInputSystem extends System {
 		const transform = world.getComponent(entity, TransformComponent)!;
 		const playerVelocity = world.getComponent(entity, VelocityComponent)!;
 		const particles = world.getComponent(entity, ParticlesComponent);
+		const ship = world.getComponent(entity, ShipComponent)!;
 
-		const speed = this.heldKeys.has(Key.Boost) ? 512 : 256;
-		const rotateSpeed = 4.0;
+		const speed = 128;
+		const rotateSpeed = ship.mode === ShipMode.Lander ? 2.0 : 4.0;
 		let movement: Vector3 = [0, 0, 0];
 
 		const thrustDirection = this.thrustDirection(world, entity);

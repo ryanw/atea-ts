@@ -1,5 +1,5 @@
 import { Gfx } from 'engine';
-import defaultSource from './render_planet.wgsl';
+import defaultSource from './render_solid_material.wgsl';
 import { Camera } from 'engine/camera';
 import { GBuffer } from 'engine/gbuffer';
 import { SimpleMesh } from 'engine/mesh';
@@ -7,7 +7,7 @@ import { Pawn } from 'engine/pawn';
 import { MaterialPipeline } from 'engine/pipelines/material';
 import { meshInstanceLayout } from 'engine/pipelines/render_mesh';
 
-export class RenderPlanetPipeline extends MaterialPipeline {
+export class RenderSolidMaterialPipeline extends MaterialPipeline {
 	private pipeline: GPURenderPipeline;
 	private pipelineNoDepth: GPURenderPipeline;
 
@@ -17,12 +17,12 @@ export class RenderPlanetPipeline extends MaterialPipeline {
 		const { device } = gfx;
 
 		const shader = device.createShaderModule({
-			label: 'RenderPlanetPipeline Shader',
+			label: 'RenderSolidMaterialPipeline Shader',
 			code: source || defaultSource
 		});
 
 		const cameraBindGroupLayout = device.createBindGroupLayout({
-			label: 'RenderPlanetPipeline Bind Group Layout',
+			label: 'RenderSolidMaterialPipeline Bind Group Layout',
 			entries: [
 				// Camera
 				{
@@ -59,7 +59,7 @@ export class RenderPlanetPipeline extends MaterialPipeline {
 		});
 
 		const pipelineDescriptor: GPURenderPipelineDescriptor = {
-			label: 'RenderPlanetPipeline',
+			label: 'RenderSolidMaterialPipeline',
 			layout: pipelineLayout,
 			vertex: {
 				module: shader,
@@ -146,7 +146,7 @@ export class RenderPlanetPipeline extends MaterialPipeline {
 				continue;
 			}
 			const bindGroup = device.createBindGroup({
-				label: 'RenderPlanetPipeline Pass Bind Group',
+				label: 'RenderSolidMaterialPipeline Pass Bind Group',
 				layout: this.pipeline.getBindGroupLayout(0),
 				entries: [
 					{ binding: 0, resource: camera.uniform.bindingResource() },

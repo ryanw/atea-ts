@@ -8,12 +8,12 @@ import { ICOSAHEDRON_TRIS, ICOSAHEDRON_VERTICES } from './icosahedron';
  * Sphere Mesh created from subdivided icosahedron
  */
 export class Icosphere extends SimpleMesh {
-	constructor(gfx: Gfx, divisions: number, instances?: Array<ColorInstance>) {
+	constructor(gfx: Gfx, divisions: number, scale: number = 1.0, instances?: Array<ColorInstance>) {
 		const vertices = buildIcosphere(
 			divisions,
 			position => ({
 				softness: 0.0,
-				position: [...position],
+				position: position.map(p => p * scale),
 				normal: normalize(position),
 				color: BigInt(0xffffffff),
 			} as ColorVertex),

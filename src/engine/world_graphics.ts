@@ -1,12 +1,12 @@
 import { Gfx, Size } from 'engine';
 import { Camera, EulerCamera, QuaternionCamera } from './camera';
 import { Entity } from './ecs';
-import { TransformComponent } from './ecs/components';
+import { PlayerComponent, TransformComponent, VelocityComponent } from './ecs/components';
 import { CameraComponent } from './ecs/components/camera';
 import { MeshComponent } from './ecs/components/mesh';
 import { World } from './ecs/world';
 import { Matrix4, Point3, Vector3 } from './math';
-import { identity, multiply, multiplyVector, rotation, rotationFromQuaternion, scaling, translation } from './math/transform';
+import { identity, multiply, multiplyVector, rotation, rotationFromQuaternion, rotationFromVector, scaling, translation } from './math/transform';
 import { SimpleMesh } from './mesh';
 import { Pawn } from './pawn';
 import { ResourceId } from './resource';
@@ -26,9 +26,13 @@ import { DecorMesh } from './decor_mesh';
 import { MaterialComponent } from './ecs/components/material';
 import { colorToInt } from './color';
 import { DecorPipeline } from './pipelines/decor';
-import { add } from './math/vectors';
+import { add, magnitude, normalize, subtract } from './math/vectors';
 import { quaternionToEuler } from './math/quaternions';
 import { StorageMaterial } from './storage_material';
+import { Icosphere } from './meshes/icosphere';
+import { DebugMaterial } from './materials/debug';
+import { CubeMesh, WireCube } from './meshes/cube';
+import { WireArrow } from './meshes/arrow';
 
 export type Resource = {};
 
@@ -41,6 +45,11 @@ export type QueuedChunk = {
 	chunk: Chunk;
 	material: Material;
 };
+
+export interface DebugInstance {
+	positionId: number;
+	velocityId: number;
+}
 
 export class WorldGraphics {
 	private meshes: Map<Entity, [number, Pawn<SimpleMesh>]> = new Map();
@@ -55,11 +64,24 @@ export class WorldGraphics {
 	private activeTerrain: Map<ChunkKey, Chunk> = new Map();
 	private terrainPipelines: Map<number, TerrainPipeline> = new Map();
 	private decorPipelines: Map<number, DecorPipeline> = new Map();
+	private debugInstances: Map<Entity, DebugInstance> = new Map();
+	private debugMeshes: {
+		dot: { mesh: Icosphere, pawn?: Pawn<Icosphere, DebugMaterial> },
+		vector: { mesh: CubeMesh, pawn?: Pawn<CubeMesh, DebugMaterial> },
+	};
 
 	constructor(
 		private gfx: Gfx,
 		private heightShaderSource?: string,
 	) {
+		this.debugMeshes = {
+			dot: {
+				mesh: new Icosphere(this.gfx, 0, 5.0)
+			},
+			vector: {
+				mesh: new WireArrow(this.gfx, [0, 0, 100])
+			},
+		};
 	}
 
 	update(world: World, scene: Scene) {
@@ -67,10 +89,84 @@ export class WorldGraphics {
 		//this.updateEulerCameras(world, scene);
 		this.updateLights(world, scene);
 		this.updateMeshes(world, scene);
+		this.updateDebug(world, scene);
 		this.updateTerrain(world, scene);
 		this.updateDecor(world, scene);
 		this.updateParticles(world, scene);
 		this.updateClipping(scene);
+	}
+
+	updateDebug(world: World, scene: Scene) {
+		this.setupMeshes(scene);
+
+		const entities = world.entitiesWithComponents([VelocityComponent, TransformComponent]);
+		const playerId = world.entitiesWithComponent(PlayerComponent).values().next().value;
+		const playerVelocity = world.getComponent(playerId, VelocityComponent)!.velocity;
+		for (const entity of entities) {
+			const { position, rotation } = world.getComponent(entity, TransformComponent)!;
+			const { velocity }  = world.getComponent(entity, VelocityComponent)!;
+			const transform = multiply(
+				translation(...position),
+				rotationFromQuaternion(rotation),
+			);
+
+			// Draw dots on every entity
+			let debugInst = this.debugInstances.get(entity);
+			if (debugInst == null) {
+				const posMesh = this.debugMeshes.dot.pawn!;
+				const positionId = this.debugMeshes.dot.mesh.pushInstance({
+					transform,
+					materialIndex: posMesh.material.instanceIndex,
+					instanceColor1: 0xffffffff,
+					instanceColor2: 0xffffffff,
+					instanceColor3: 0xffffffff,
+					variantIndex: 0,
+					variantBlend: 0.0,
+					live: 1,
+				});
+				const velMesh = this.debugMeshes.vector.pawn!;
+				const velocityId = this.debugMeshes.vector.mesh.pushInstance({
+					transform,
+					materialIndex: velMesh.material.instanceIndex,
+					instanceColor1: 0xffffffff,
+					instanceColor2: 0xffffffff,
+					instanceColor3: 0xffffffff,
+					variantIndex: 0,
+					variantBlend: 0.0,
+					live: 1,
+				});
+				debugInst = {
+					positionId,
+					velocityId,
+				};
+				this.debugInstances.set(entity, debugInst);
+			}
+
+			scene.updateMeshTransform(this.debugMeshes.dot.pawn!, debugInst.positionId, transform);
+			const velocityDiff = subtract(velocity, playerVelocity);
+
+			const velocityArrowTransform = multiply(
+				translation(...position),
+				rotationFromVector(normalize(velocityDiff)),
+				scaling(magnitude(velocityDiff)/200),
+			);
+			scene.updateMeshTransform(this.debugMeshes.vector.pawn!, debugInst.velocityId, velocityArrowTransform);
+		}
+	}
+	setupMeshes(scene: Scene) {
+		if (!this.debugMeshes.dot.pawn) {
+			this.debugMeshes.dot.pawn = scene.addMesh(
+				this.debugMeshes.dot.mesh,
+				new DebugMaterial(this.gfx, 0xffffff00n),
+			);
+		}
+
+		if (!this.debugMeshes.vector.pawn) {
+			this.debugMeshes.vector.pawn = scene.addMesh(
+				this.debugMeshes.vector.mesh,
+				new DebugMaterial(this.gfx, 0xff00ff00n, true),
+			);
+		}
 	}
 
 	updateClipping(scene: Scene) {
@@ -206,8 +302,8 @@ export class WorldGraphics {
 					instanceColor1: colors[1],
 					instanceColor2: colors[2],
 					instanceColor3: colors[3],
-					variantIndex: material.variantIndex,
-					variantBlend: material.variantIndex,
+					variantIndex: material.variantIndex | 0,
+					variantBlend: material.variantIndex % 1.0,
 					live: 1,
 				});
 				this.meshes.set(entity, [idx, pawn]);
@@ -225,8 +321,8 @@ export class WorldGraphics {
 			if (materialComp) {
 				const material = this.getMaterialForComponent(materialComp);
 				material.variantIndex = materialComp.variant | 0;
-				material.variantBlend = materialComp.variant - material.variantIndex;
-				const bufferOffset = idx * pawn.object.instanceSize + 16*4 + 4 * 4;
+				material.variantBlend = materialComp.variant % 1.0;
+				const bufferOffset = idx * pawn.object.instanceSize + 16 * 4 + 4 * 4;
 				device.queue.writeBuffer(
 					pawn.object.instanceBuffer,
 					bufferOffset,

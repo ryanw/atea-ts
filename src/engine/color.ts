@@ -16,6 +16,10 @@ export function toColor(color: ColorLike): Color {
 }
 
 export function hsl(h: number, s: number, ll: number, a: number = 1.0): Color {
+	if (h < 0) {
+		h += Math.ceil(-h);
+	}
+	h %= 1;
 	const l = Math.max(0, Math.min(1, ll));
 	if (s === 0) {
 		return [l * 255, l * 255, l * 255, a * 255];

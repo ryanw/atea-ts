@@ -87,7 +87,7 @@ export function planet(world: World, material: string, position: Point3, planet:
 		new ColliderComponent(scale),
 		new VelocityComponent([0, 0, 0]),
 		new MaterialComponent(material),
-		new GravityComponent(10 * scale),
+		new GravityComponent(3 * scale),
 	]);
 }
 

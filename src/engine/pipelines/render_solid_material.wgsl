@@ -1,7 +1,5 @@
-struct PlanetMaterial {
-	seed: u32,
-	lowLandColor: u32,
-	highLandColor: u32,
+struct SolidMaterial {
+	color: u32,
 }
 
 struct VertexOut {
@@ -13,8 +11,7 @@ struct VertexOut {
 	@location(4) modelPosition: vec3f,
 	@location(5) modelNormal: vec3f,
 	@location(6) alt: f32,
-	@location(7) @interpolate(flat) seed: u32,
-	@location(8) @interpolate(flat) materialIndex: u32,
+	@location(7) @interpolate(flat) materialIndex: u32,
 }
 
 struct FragmentOut {
@@ -30,7 +27,7 @@ var<uniform> camera: Camera;
 var<uniform> pawn: Pawn;
 
 @group(0) @binding(2)
-var<storage, read> materials: array<PlanetMaterial>;
+var<storage, read> materials: array<SolidMaterial>;
 
 @group(0) @binding(3)
 var<storage, read> vertices: array<PackedVertex>;
@@ -45,7 +42,6 @@ fn vs_main(in: VertexIn) -> VertexOut {
 
 	let material = materials[in.materialIndex];
 	let variantIndex = in.variantIndex + pawn.variantIndex;
-	let seed = material.seed + 1000 * variantIndex;
 
 	let idx = in.id;
 	let packedVertex = vertices[idx];
@@ -67,12 +63,9 @@ fn vs_main(in: VertexIn) -> VertexOut {
 	);
 	let offsetModel = pawn.model * transform;
 	let mv = camera.view * offsetModel;
-	let mvp = camera.projection * camera.view;
+	let mvp = camera.projection * mv;
 
-	let scale = 1.0/2.0;
-	let offsetPoint = terrainPoint(scale, v.position, 3, seed, 0.0);
-	var p = offsetModel * vec4(offsetPoint, 1.0);
-	//var p = offsetModel * vec4(v.position, 1.0);
+	let p = vec4(v.position, 1.0);
 	var position = mvp * p;
 
 	out.position = position;
@@ -82,7 +75,6 @@ fn vs_main(in: VertexIn) -> VertexOut {
 	out.normal = normal;
 	out.alt = v.alt;
 
-	out.seed = seed;
 	out.materialIndex = in.materialIndex;
 
 	return out;
@@ -92,65 +84,17 @@ fn vs_main(in: VertexIn) -> VertexOut {
 @fragment
 fn fs_main(in: VertexOut) -> FragmentOut {
 	var out: FragmentOut;
-	var color = in.color;
-	if color.a == 0.0 {
-		discard;
-	}
-
 	let material = materials[in.materialIndex];
-	let lowLandColor = unpack4x8unorm(material.lowLandColor);
-	let highLandColor = unpack4x8unorm(material.highLandColor);
+	let color = unpack4x8unorm(material.color);
 
-	let midland = 0.3;
-	let maxOctaves = 5.0;
-
-
-	var p = normalize(in.originalPosition);
-	let ll = pointToLonLat(p);
-
-	let fp = fwidth(p);
-	let mm = max(max(fp.x, fp.y), fp.z);
-	var res = 1.0 - pow(smoothstep(0.0, 1.0/32.0, mm), 0.2);
-	res = clamp(pow(res, 1.0), 0.0, 1.0);
-
-	let octaves = i32(ceil(1.0 + res * maxOctaves));
-	var n0 = terrainNoise(p, octaves, in.seed, 0.0);
-	var n1 = fractalNoise(vec3(3213) + p*4.0, max(1, octaves-1))-0.1;
-	let scale = 1.0/4.0;
-	var normal = terrainNormal(scale, p, octaves + 1, in.seed, 0.0);
-
-	var brightness = 1.0;
-	color = mix(lowLandColor, highLandColor, smoothstep(0.0, 1.0, n0 + n1));
-
-
-	//color = vec4(n1, n1, n1, 1.0);
 	out.albedo = vec4(color.rgb, color.a);
-	out.normal = vec4(normal, 0.0);
+	out.normal = vec4(normalize(in.normal), 0.0);
 
 	return out;
-}
-
-const PI: f32 = 3.14159265;
-fn pointToLonLat(point: vec3<f32>) -> vec2<f32> {
-	let v = normalize(point);
-	let lat = acos(v.y) - PI / 2.0;
-	let lon = atan2(v.z, v.x) + PI / 2.0;
-	return vec2(lon, lat);
-}
-
-fn lonLatToUV(ll: vec2<f32>) -> vec2<f32> {
-	let x = ll.x / PI / 2.0;
-	let y = ll.y / PI + 0.5;
-	return vec2(fract(x), fract(y));
-}
-
-fn pointToUV(point: vec3<f32>) -> vec2<f32> {
-	return lonLatToUV(pointToLonLat(point));
 }
 
 @import "./pawn.inc.wgsl";
 @import "./camera.inc.wgsl";
 @import "./vertex.inc.wgsl";
-@import "./terrain_noise.wgsl";
 @import "engine/shaders/noise.wgsl";
 @import "engine/shaders/color.wgsl";

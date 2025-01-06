@@ -35,6 +35,15 @@ fn worldFromScreen(coord : vec2f, depth_sample: f32, mvp: mat4x4f) -> vec3f {
   return posWorld;
 }
 
+fn scaling(scale: vec3f) -> mat4x4f {
+	return mat4x4f(
+		scale.x, 0.0, 0.0, 0.0,
+		0.0, scale.y, 0.0, 0.0,
+		0.0, 0.0, scale.z, 0.0,
+		0.0, 0.0, 0.0, 1.0,
+	);
+}
+
 fn translate(offset: vec3f) -> mat4x4f {
 	return mat4x4f(
 		1.0, 0.0, 0.0, 0.0,

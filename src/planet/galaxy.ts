@@ -96,7 +96,8 @@ export class Planet {
 	readonly density: number;
 	readonly waterLevel: number;
 	readonly terrainSeed: bigint;
-	readonly landColor: Color;
+	readonly lowLandColor: Color;
+	readonly highLandColor: Color;
 	readonly shallowWaterColor: Color;
 	readonly deepWaterColor: Color;
 
@@ -104,19 +105,39 @@ export class Planet {
 		readonly planetSeed: bigint,
 		orbitRadius: number,
 	) {
-		const rng = bigRandomizer(planetSeed + 321n);
-		const rngi = bigIntRandomizer(planetSeed + 4313n);
+		const rng = bigRandomizer(planetSeed * 31n);
+		const rngi = bigIntRandomizer(planetSeed * 73n);
 		this.terrainSeed = rngi();
 		this.density = rng(0.5, 1.5);
-		this.waterLevel = rng(0, 100);
-		this.radius = rng(200, 700);
+		this.waterLevel = rng(0, 100) | 0;
+		this.radius = rng(200, 700) | 0;
 		const orbitOffset = rng(0.0, Math.PI * 2);
 		const orbitSpeed = rng(0, 1);
 		const orbitTilt = quaternionFromEuler(0, 0, rng(0.0, Math.PI / 6.0));
-		this.landColor = hsl(rng(0, 1), 0.5, 0.65);
-		const waterHue = rng(0, 1);
-		this.shallowWaterColor = hsl(waterHue, 0.5, 0.65, 0.1);
-		this.deepWaterColor = hsl(waterHue + rng(-0.1, 0.1), 0.6, 0.3, 0.9);
+		const landhsl = [rng(0, 1), rng(0.0, 0.8)**0.5, rng(0.2, 0.8)];
+		const waterhsl = [rng(0, 1), rng(0.0, 0.7)**0.5, rng(0.2, 0.8)];
+		this.lowLandColor = hsl(
+			landhsl[0],
+			landhsl[1],
+			landhsl[2],
+		);
+		this.highLandColor = hsl(
+			landhsl[0] + rng(-0.2, 0.2),
+			landhsl[1] - rng(0.0, 0.2),
+			landhsl[2] + rng(0.0, 0.2),
+		);
+		this.shallowWaterColor = hsl(
+			waterhsl[0],
+			waterhsl[1],
+			waterhsl[2],
+			0.1,
+		);
+		this.deepWaterColor = hsl(
+			waterhsl[0] + rng(-0.2, 0.2),
+			waterhsl[1] - rng(0.1, 0.2),
+			waterhsl[2] + rng(0.1, 0.2),
+			0.9,
+		);
 
 		this.orbit = new Orbit(
 			orbitRadius,

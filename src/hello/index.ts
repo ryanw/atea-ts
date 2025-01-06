@@ -37,7 +37,7 @@ export async function main(el: HTMLCanvasElement): Promise<Gfx> {
 			instanceColor3: 0,
 			transform,
 			variantIndex: 0,
-			variantBlend: 1.0,
+			variantBlend: 0.0,
 			live: 1
 		});
 
@@ -56,7 +56,7 @@ export async function main(el: HTMLCanvasElement): Promise<Gfx> {
 				instanceColor3: 0,
 				transform,
 				variantIndex: 0,
-				variantBlend: 1.0,
+				variantBlend: 0.0,
 				live: 1
 			});
 		}

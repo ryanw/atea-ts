@@ -81,13 +81,25 @@ export class Scene {
 		return pawn;
 	}
 
-	addMesh<T extends Mesh<any, any>>(item: T, material?: Material, transform?: Matrix4): Pawn<T> {
+	addMesh<T extends Mesh<any, any>>(item: T, material?: undefined, transform?: Matrix4): Pawn<T, Material>;
+	addMesh<T extends Mesh<any, any>, M extends Material>(item: T, material: M, transform?: Matrix4): Pawn<T, M>;
+	addMesh<T extends Mesh<any, any>, M extends Material>(item: T, material?: M, transform?: Matrix4): Pawn<T, M | Material> {
 		return this.addPawn(new Pawn(
 			this.gfx,
 			item,
 			material ?? new SimpleMaterial(this.gfx, 0xffffffff),
 			transform
 		));
+	}
+
+	updateMeshTransform<T extends Mesh<any, any>>(pawn: Pawn<T>, index: number, transform: Matrix4) {
+		if (!pawn.object.instanceBuffer) return;
+		// FIXME better field updating
+		this.gfx.device.queue.writeBuffer(
+			pawn.object.instanceBuffer,
+			index * pawn.object.instanceSize,
+			new Float32Array(transform),
+		);
 	}
 
 	removePawn(pawn: Pawn<unknown>) {

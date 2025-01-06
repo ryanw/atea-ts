@@ -127,7 +127,7 @@ fn fs_main(in: VertexOut) -> FragmentOut {
 	var view = camera.view * vec4(0.0, 0.0, 0.0, 1.0);
 	// FIXME this ain't right
 	let cameraPos = camera.view * vec4(0.0, 0.0, 0.0, 1.0);
-	let cp = cameraPos.xyz/cameraPos.w;
+	let cp = cameraPos.xzy/cameraPos.w;
 	var viewDir = normalize(cp - fragPos);
 
 	let specularStrength = 0.5;
@@ -145,6 +145,7 @@ fn fs_main(in: VertexOut) -> FragmentOut {
 
 
 	out.color = vec4(color.rgb * shade * color.a, color.a);
+	//out.color = vec4(specular, 0.0, 0.0, 1.0);
 	return out;
 }
 

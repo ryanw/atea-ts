@@ -43,9 +43,10 @@ export function bigRandomizer(seed: bigint): Randomizer {
 
 export type BigRandomizer = () => bigint;
 export function bigIntRandomizer(seed: bigint): BigRandomizer {
-	let rndIdx = 131313n * seed;
+	let rndIdx = 100n + 13n * seed;
 	return () => {
-		const n = rndIdx++;
+		const n = rndIdx;
+		rndIdx += 1387n;
 		const coord = [n, n, n] as BigVector3;
 		return bigPcg3d(coord)[0];
 	};

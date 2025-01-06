@@ -11,6 +11,10 @@ import { RenderDotPipeline } from './pipelines/render_dot';
 import { ShadowMap } from './shadow_map';
 import { Scene } from './scene';
 import { DirectionalLight } from './light';
+import { RenderSolidMaterialPipeline } from './pipelines/render_solid_material';
+import { SolidMaterial } from './materials/solid';
+import { DebugMaterial } from './materials/debug';
+import { RenderDebugMaterialPipeline } from './pipelines/render_debug_material';
 
 export interface RenderPipelines {
 	compose: ComposePipeline,
@@ -27,6 +31,8 @@ export class Renderer {
 		};
 		this.registerMaterial(SimpleMaterial, new RenderMeshPipeline(gfx));
 		this.registerMaterial(DotMaterial, new RenderDotPipeline(gfx));
+		this.registerMaterial(SolidMaterial, new RenderSolidMaterialPipeline(gfx));
+		this.registerMaterial(DebugMaterial, new RenderDebugMaterialPipeline(gfx));
 	}
 
 	registerMaterial<M extends Material, P extends MaterialPipeline>(material: Constructor<M>, pipeline: P) {
@@ -43,20 +49,6 @@ export class Renderer {
 			constructor = Object.getPrototypeOf(constructor);
 		}
 		console.error('Failed to find pipeline for', material);
-	}
-
-	drawSceneShadows(encoder: GPUCommandEncoder, scene: Scene, light: DirectionalLight, target: ShadowMap) {
-		this.clearShadows(encoder, target);
-
-		// Group entities by material, render them together if possible
-		for (const [Mat, pipeline] of this.pipelines.materials.entries()) {
-			function isValidMesh(entity: Pawn<unknown>): entity is Pawn<SimpleMesh> {
-				return isPawnOf(entity, SimpleMesh) && (entity.material instanceof Mat);
-			}
-
-			const entities = scene.pawns.filter(isValidMesh);
-			pipeline.drawShadowMapBatch(encoder, entities, light, target);
-		}
 	}
 
 	drawScene(encoder: GPUCommandEncoder, scene: Scene, camera: Camera, target: GBuffer) {
@@ -89,6 +81,23 @@ export class Renderer {
 
 			const entities = scene.pawns.filter(isValidMesh);
 			pipeline.drawTransparencies(encoder, entities, camera, depth, target);
+		}
+	}
+
+	drawDebug(encoder: GPUCommandEncoder, scene: Scene, camera: Camera, depth: GPUTexture, target: GPUTexture) {
+	}
+
+	drawSceneShadows(encoder: GPUCommandEncoder, scene: Scene, light: DirectionalLight, target: ShadowMap) {
+		this.clearShadows(encoder, target);
+
+		// Group entities by material, render them together if possible
+		for (const [Mat, pipeline] of this.pipelines.materials.entries()) {
+			function isValidMesh(entity: Pawn<unknown>): entity is Pawn<SimpleMesh> {
+				return isPawnOf(entity, SimpleMesh) && (entity.material instanceof Mat);
+			}
+
+			const entities = scene.pawns.filter(isValidMesh);
+			pipeline.drawShadowMapBatch(encoder, entities, light, target);
 		}
 	}
 

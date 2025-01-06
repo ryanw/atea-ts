@@ -23,7 +23,7 @@ export class TerrainMesh extends SimpleMesh {
 			instanceColor2: BigInt(0xffffffff),
 			instanceColor3: BigInt(0xffffffff),
 			variantIndex: BigInt(0x0),
-			variantBlend: 1.0,
+			variantBlend: 0.0,
 			live: 1,
 		}]
 		super(gfx, undefined, instances);

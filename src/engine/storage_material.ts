@@ -17,6 +17,10 @@ export abstract class StorageMaterial extends Material implements ToArrayBuffer 
 
 	readonly instanceId: number;
 
+	get instanceIndex(): number {
+		return this.instanceId - 1;
+	}
+
 	constructor(gfx: Gfx) {
 		super();
 

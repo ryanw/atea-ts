@@ -1,4 +1,4 @@
-import { add, dot, lerp, magnitude, normalize, scale, subtract } from 'engine/math/vectors';
+import { add, dot, lerp, magnitude, magnitudeSquared, normalize, scale, subtract } from 'engine/math/vectors';
 import { Gfx } from 'engine';
 import { System } from 'engine/ecs/systems';
 import { World } from 'engine/ecs/world';
@@ -27,6 +27,7 @@ export class PhysicsSystem extends System {
 		this.tickPhysics(dt, world);
 		this.tickVelocity(dt, world);
 	}
+
 	tickVelocity(dt: number, world: World) {
 		const entities = world.entitiesWithComponents([VelocityComponent, TransformComponent]);
 		for (const entity of entities) {
@@ -73,6 +74,7 @@ export class PhysicsSystem extends System {
 				const drag = 1.0 - max(0.0, min(1.0, distance / 5120.0));
 
 				const gravity = calculateGravity(tra.position, planet.position, planet.force * dt);
+				const speedDiff = subtract(vel.velocity, planet.velocity);
 				vel.velocity = add(vel.velocity, gravity);
 
 				if (isPlayer) {
@@ -81,20 +83,20 @@ export class PhysicsSystem extends System {
 						// Objects touching, snap together
 						//vel.velocity = [...planet.velocity];
 						if (distance < 0.0) {
-							tra.position = add(planet.position, scale(normalize(diff), planet.radius));
+							tra.position = add(planet.position, scale(normalize(diff), planet.radius-0.001));
 							vel.velocity = planet.velocity;
 						}
-						//continue;
+						continue;
 					}
 
-					if (drag > 0.1) {
+					if (drag > 0.1 && magnitudeSquared(gravity) > 0) {
 						// Dampening by matching planet's speed
 						const speedDiff = subtract(planet.velocity, vel.velocity);
 						const gravDir: Vector3 = collided ? [0, 0, 0] : normalize(gravity);
 						const mag = dot(speedDiff, gravDir);
 						const proj = scale(gravDir, mag);
 						const velDiff = scale(subtract(speedDiff, proj), drag);
-						vel.velocity = add(vel.velocity, scale(speedDiff, dt));
+						//vel.velocity = add(vel.velocity, velDiff);
 					}
 				}
 			}
@@ -123,7 +125,9 @@ function calculateGravity(p: Point3, well: Point3, force: number): Vector3 {
 	const distance = magnitude(diff);
 	const dir = normalize(diff);
 
-	return scale(dir, (1 / (distance ** 2)) * force * 1000);
+	// Not realistic, but feels nicer
+	//return scale(dir, (1 / (distance ** 2)) * force * 1000);
+	return scale(dir, (1 / distance) * force * 100);
 }
 function hasCollided(p0: Point3, p1: Point3, radius: number): boolean {
 	return magnitude(subtract(p0, p1)) < radius;

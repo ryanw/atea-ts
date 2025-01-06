@@ -1,15 +1,16 @@
 import { Gfx } from 'engine';
-import defaultSource from './render_planet.wgsl';
+import defaultSource from './render_debug_material.wgsl';
 import { Camera } from 'engine/camera';
 import { GBuffer } from 'engine/gbuffer';
 import { SimpleMesh } from 'engine/mesh';
 import { Pawn } from 'engine/pawn';
 import { MaterialPipeline } from 'engine/pipelines/material';
 import { meshInstanceLayout } from 'engine/pipelines/render_mesh';
+import { DebugMaterial } from 'engine/materials/debug';
 
-export class RenderPlanetPipeline extends MaterialPipeline {
-	private pipeline: GPURenderPipeline;
-	private pipelineNoDepth: GPURenderPipeline;
+export class RenderDebugMaterialPipeline extends MaterialPipeline {
+	private solidPipeline: GPURenderPipeline;
+	private wirePipeline: GPURenderPipeline;
 
 	constructor(gfx: Gfx, source?: string) {
 		super(gfx);
@@ -17,12 +18,12 @@ export class RenderPlanetPipeline extends MaterialPipeline {
 		const { device } = gfx;
 
 		const shader = device.createShaderModule({
-			label: 'RenderPlanetPipeline Shader',
+			label: 'RenderDebugMaterialPipeline Shader',
 			code: source || defaultSource
 		});
 
 		const cameraBindGroupLayout = device.createBindGroupLayout({
-			label: 'RenderPlanetPipeline Bind Group Layout',
+			label: 'RenderDebugMaterialPipeline Bind Group Layout',
 			entries: [
 				// Camera
 				{
@@ -59,7 +60,7 @@ export class RenderPlanetPipeline extends MaterialPipeline {
 		});
 
 		const pipelineDescriptor: GPURenderPipelineDescriptor = {
-			label: 'RenderPlanetPipeline',
+			label: 'RenderDebugMaterialPipeline',
 			layout: pipelineLayout,
 			vertex: {
 				module: shader,
@@ -88,38 +89,35 @@ export class RenderPlanetPipeline extends MaterialPipeline {
 					{ format: 'r8uint' },
 				]
 			},
-			primitive: { topology: 'triangle-list', frontFace: 'cw', cullMode: 'back', },
+			primitive: { topology: 'triangle-list', frontFace: 'cw', cullMode: 'none', },
 			depthStencil: {
 				format: 'depth32float',
 				depthWriteEnabled: true,
 				depthCompare: 'less',
 			}
 		};
-		this.pipeline = device.createRenderPipeline(pipelineDescriptor);
-
-		this.pipelineNoDepth = device.createRenderPipeline({
+		this.solidPipeline = device.createRenderPipeline(pipelineDescriptor);
+		this.wirePipeline = device.createRenderPipeline({
 			...pipelineDescriptor,
-			depthStencil: {
-				format: 'depth32float',
-				depthWriteEnabled: false,
-				depthCompare: 'less',
-			}
+			primitive: { topology: 'line-list', frontFace: 'cw', cullMode: 'none', },
 		});
-
 	}
 
-	drawBatch(encoder: GPUCommandEncoder, pawns: Array<Pawn<SimpleMesh>>, camera: Camera, target: GBuffer) {
+	drawBatch(encoder: GPUCommandEncoder, pawns: Array<Pawn<SimpleMesh, DebugMaterial>>, camera: Camera, target: GBuffer) {
 		if (pawns.length === 0) {
 			return;
 		}
+		this.drawSolids(encoder, pawns.filter(p => !p.material.isWireframe), camera, target);
+		this.drawWires(encoder, pawns.filter(p => p.material.isWireframe), camera, target);
+	}
+
+	drawSolids(encoder: GPUCommandEncoder, pawns: Array<Pawn<SimpleMesh, DebugMaterial>>, camera: Camera, target: GBuffer) {
 		const { device } = this.gfx;
 
 		const albedoView = target.albedo.createView();
 		const normalView = target.normal.createView();
 		const metaView = target.meta.createView();
 		const depthView = target.depth.createView();
-		// FIXME assumes all entities use same material
-		const writeDepth = pawns[0].material.writeDepth;
 
 		const baseAttachment: Omit<GPURenderPassColorAttachment, 'view'> = {
 			clearValue: [0, 0, 0, 0],
@@ -133,21 +131,66 @@ export class RenderPlanetPipeline extends MaterialPipeline {
 				{ view: normalView, ...baseAttachment },
 				{ view: metaView, ...baseAttachment },
 			],
-			depthStencilAttachment: writeDepth
-				? { view: depthView, depthLoadOp: 'load', depthStoreOp: 'store' }
-				: { view: depthView, depthReadOnly: true }
+			depthStencilAttachment: { view: depthView, depthLoadOp: 'load', depthStoreOp: 'store' }
 		};
 
 		const pass = encoder.beginRenderPass(passDescriptor);
-		pass.setPipeline(writeDepth ? this.pipeline : this.pipelineNoDepth);
+		pass.setPipeline(this.solidPipeline);
 
 		for (const pawn of pawns) {
 			if (!pawn.visible || pawn.object.vertexCount === 0 || pawn.object.instanceCount === 0) {
 				continue;
 			}
 			const bindGroup = device.createBindGroup({
-				label: 'RenderPlanetPipeline Pass Bind Group',
-				layout: this.pipeline.getBindGroupLayout(0),
+				label: 'RenderDebugMaterialPipeline Pass Bind Group',
+				layout: this.solidPipeline.getBindGroupLayout(0),
+				entries: [
+					{ binding: 0, resource: camera.uniform.bindingResource() },
+					{ binding: 1, resource: pawn.bindingResource() },
+					{ binding: 2, resource: pawn.material.bindingResource() },
+					{ binding: 3, resource: { buffer: pawn.object.vertexBuffer } },
+				],
+			});
+			pass.setBindGroup(0, bindGroup);
+			pass.setVertexBuffer(0, pawn.object.instanceBuffer);
+			pass.draw(pawn.object.vertexCount, pawn.object.instanceCount);
+		}
+		pass.end();
+	}
+
+	drawWires(encoder: GPUCommandEncoder, pawns: Array<Pawn<SimpleMesh, DebugMaterial>>, camera: Camera, target: GBuffer) {
+		const { device } = this.gfx;
+
+		const albedoView = target.albedo.createView();
+		const normalView = target.normal.createView();
+		const metaView = target.meta.createView();
+		const depthView = target.depth.createView();
+
+		const baseAttachment: Omit<GPURenderPassColorAttachment, 'view'> = {
+			clearValue: [0, 0, 0, 0],
+			loadOp: 'load',
+			storeOp: 'store',
+		};
+
+		const passDescriptor: GPURenderPassDescriptor = {
+			colorAttachments: [
+				{ view: albedoView, ...baseAttachment },
+				{ view: normalView, ...baseAttachment },
+				{ view: metaView, ...baseAttachment },
+			],
+			depthStencilAttachment: { view: depthView, depthLoadOp: 'load', depthStoreOp: 'store' }
+		};
+
+		const pass = encoder.beginRenderPass(passDescriptor);
+		pass.setPipeline(this.wirePipeline);
+
+		for (const pawn of pawns) {
+			if (!pawn.visible || pawn.object.vertexCount === 0 || pawn.object.instanceCount === 0) {
+				continue;
+			}
+			const bindGroup = device.createBindGroup({
+				label: 'RenderDebugMaterialPipeline Pass Bind Group',
+				layout: this.solidPipeline.getBindGroupLayout(0),
 				entries: [
 					{ binding: 0, resource: camera.uniform.bindingResource() },
 					{ binding: 1, resource: pawn.bindingResource() },

@@ -121,7 +121,7 @@ fn vs_main(in: VertexIn) -> VertexOut {
 	let pkv0 = vertices[idx0];
 
 	var v = Vertex();
-	if (in.variantBlend < 1.0) {
+	if (in.variantBlend > 0.0) {
 		let variantIndex1 = in.variantIndex + pawn.variantIndex - 1u;
 		let vertexOffset1 = euclidModu(variantIndex1, pawn.variantCount) * pawn.vertexCount;
 		let idx1 = in.id + vertexOffset1;
@@ -129,13 +129,13 @@ fn vs_main(in: VertexIn) -> VertexOut {
 
 		v = Vertex(
 			mix(
-				vec3(pkv1.position[0], pkv1.position[1], pkv1.position[2]),
 				vec3(pkv0.position[0], pkv0.position[1], pkv0.position[2]),
+				vec3(pkv1.position[0], pkv1.position[1], pkv1.position[2]),
 				in.variantBlend
 			),
 			mix(
-				vec3(pkv1.normal[0], pkv1.normal[1], pkv1.normal[2]),
 				vec3(pkv0.normal[0], pkv0.normal[1], pkv0.normal[2]),
+				vec3(pkv1.normal[0], pkv1.normal[1], pkv1.normal[2]),
 				in.variantBlend
 			),
 			pkv1.color,
