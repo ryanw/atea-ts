@@ -82,12 +82,12 @@ export function planet(world: World, material: string, position: Point3, planet:
 		new TransformComponent(position, [0, 0, 0, 1], [scale, scale, scale]),
 		new MeshComponent('planet'),
 		//new PhysicsComponent(),
-		new OrbitComponent(planet.orbit),
+		//new OrbitComponent(planet.orbit),
 		new FocusableComponent(),
 		new ColliderComponent(scale),
 		new VelocityComponent([0, 0, 0]),
 		new MaterialComponent(material),
-		new GravityComponent(3 * scale),
+		new GravityComponent(100),
 	]);
 }
 
@@ -97,7 +97,7 @@ export function water(world: World, material: string, position: Point3, planet: 
 		new MetaComponent("Water"),
 		new TransformComponent(position, [0, 0, 0, 1], [scale, scale, scale]),
 		new MeshComponent('water'),
-		new OrbitComponent(planet.orbit),
+		//new OrbitComponent(planet.orbit),
 		//new PhysicsComponent(),
 		new VelocityComponent([0, 0, 0]),
 		new MaterialComponent(material),

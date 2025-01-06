@@ -36,7 +36,6 @@ import { add } from 'engine/math/vectors';
 import { SimpleMaterial } from 'engine/material';
 import { RenderStarPipeline } from './pipelines/render_star';
 import { bigRandomizer, randomizer } from 'engine/noise';
-import { SolidMaterial } from 'engine/materials/solid';
 
 const GFX_CONFIG = {
 	renderMode: 0,

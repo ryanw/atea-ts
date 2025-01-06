@@ -202,98 +202,6 @@ export class PlayerInputSystem extends System {
 		this.pressedKeys.clear();
 	}
 
-	updateSpace(dt: number, world: World, entity: Entity) {
-		const transform = world.getComponent(entity, TransformComponent)!;
-		const playerVelocity = world.getComponent(entity, VelocityComponent)!;
-		const particles = world.getComponent(entity, ParticlesComponent);
-
-		const speed = this.heldKeys.has(Key.Boost) ? 256 : 128;
-		const rotateSpeed = 4.0;
-		const movement: Vector3 = [0, 0, 0];
-		let brake = 0.0;
-		let pitch = 0.0;
-		let yaw = 0.0;
-		let thrust = 0;
-		let roll = 0;
-		let tilt = 0;
-
-		for (const [key, value] of this.heldKeys.entries()) {
-			switch (key) {
-				case Key.Forward:
-					pitch = value;
-					break;
-				case Key.Backward:
-					pitch = -value;
-					break;
-				case Key.Left:
-					yaw = -value;
-					break;
-				case Key.Right:
-					yaw = value;
-					break;
-				case Key.RollLeft:
-					roll = value;
-					break;
-				case Key.RollRight:
-					roll = -value;
-					break;
-				case Key.Thrust:
-					if (Math.abs(value) > DEADZONE) {
-						thrust = value;
-						movement[2] = value;
-					}
-					break;
-				case Key.Brake:
-					if (Math.abs(value) > DEADZONE) {
-						thrust = -value;
-						movement[2] = -value;
-					}
-					break;
-			}
-		}
-
-		for (const [key, value] of this.axis.entries()) {
-			if (Math.abs(value) < DEADZONE) {
-				continue;
-			}
-			switch (key) {
-				case XboxAxis.RightStickX:
-					yaw += value;
-					break;
-				case XboxAxis.LeftStickY:
-					pitch -= value;
-					break;
-				case XboxAxis.LeftStickX:
-					roll -= value;
-					break;
-				case XboxAxis.RightStickY:
-					tilt += value;
-					break;
-			}
-		}
-
-		const adjustment = quats.quaternionFromEuler(pitch * dt * rotateSpeed, yaw * dt * rotateSpeed, roll * dt * rotateSpeed);
-		transform.rotation = quats.multiply(transform.rotation, adjustment);
-
-		if (movement[0] !== 0 || movement[1] !== 0 || movement[2] !== 0) {
-			const playerRot = rotationFromQuaternion(transform.rotation);
-
-			const direction = normalize(multiplyVector(playerRot, [...movement, 0]).slice(0, 3) as Vector3);
-			const velocity = scale(direction, speed * dt);
-			playerVelocity.velocity = add(playerVelocity.velocity, velocity);
-		}
-
-		if (brake > 0) {
-			const stopTime = 1.0;
-			const vt = 1.0 - ((1.0 / stopTime) * brake * dt);
-			playerVelocity.velocity = scale(playerVelocity.velocity, vt);
-		}
-
-		if (particles) {
-			particles.count = 256 * thrust;
-		}
-	}
-
 	thrustDirection(world: World, entity: Entity): Vector3 {
 		const ship = world.getComponent(entity, ShipComponent);
 		if (!ship) return [0, 0, 0];
@@ -302,6 +210,8 @@ export class PlayerInputSystem extends System {
 			case ShipMode.Lander:
 				return [0, 1, 0];
 			case ShipMode.Space:
+				return [0, 0, 1];
+			case ShipMode.Ground:
 				return [0, 0, 1];
 			default:
 				return [0, 0, 0];
@@ -315,7 +225,7 @@ export class PlayerInputSystem extends System {
 		const particles = world.getComponent(entity, ParticlesComponent);
 		const ship = world.getComponent(entity, ShipComponent)!;
 
-		const speed = 128;
+		const speed = 64;
 		const rotateSpeed = ship.mode === ShipMode.Lander ? 2.0 : 4.0;
 		let movement: Vector3 = [0, 0, 0];
 

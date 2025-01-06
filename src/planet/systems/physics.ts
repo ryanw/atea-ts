@@ -24,8 +24,8 @@ export class PhysicsSystem extends System {
 	}
 
 	override async tick(dt: number, world: World) {
-		this.tickPhysics(dt, world);
 		this.tickVelocity(dt, world);
+		this.tickPhysics(dt, world);
 	}
 
 	tickVelocity(dt: number, world: World) {
@@ -74,6 +74,7 @@ export class PhysicsSystem extends System {
 				const drag = 1.0 - max(0.0, min(1.0, distance / 5120.0));
 
 				const gravity = calculateGravity(tra.position, planet.position, planet.force * dt);
+				console.log("GRAVITy", magnitude(gravity) /dt);
 				const speedDiff = subtract(vel.velocity, planet.velocity);
 				vel.velocity = add(vel.velocity, gravity);
 
@@ -126,8 +127,9 @@ function calculateGravity(p: Point3, well: Point3, force: number): Vector3 {
 	const dir = normalize(diff);
 
 	// Not realistic, but feels nicer
-	//return scale(dir, (1 / (distance ** 2)) * force * 1000);
-	return scale(dir, (1 / distance) * force * 100);
+	return scale(dir, (1 / (distance ** 1)) * force * 200);
+	//return scale(dir, (1 / (distance ** 2)) * force * 100000);
+	//return scale(dir, (1 / distance) * force * 100);
 }
 function hasCollided(p0: Point3, p1: Point3, radius: number): boolean {
 	return magnitude(subtract(p0, p1)) < radius;

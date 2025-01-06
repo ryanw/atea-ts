@@ -37,7 +37,7 @@ export class StarSystem {
 	) {
 		const rng = bigRandomizer(this.systemSeed + 3240n);
 		this.starCount = rng(1, 1) | 0;
-		this.planetCount = rng(4, 16) | 0;
+		this.planetCount = rng(4, 32) | 0;
 	}
 
 	*stars(): Generator<Star> {
@@ -112,7 +112,7 @@ export class Planet {
 		this.waterLevel = rng(0, 100) | 0;
 		this.radius = 500;//rng(200, 700) | 0;
 		const orbitOffset = rng(0.0, Math.PI * 2);
-		const orbitSpeed = rng(0, 1);
+		const orbitSpeed = rng(0, 0.2);
 		const orbitTilt = quaternionFromEuler(0, 0, rng(0.0, Math.PI / 6.0));
 		const landhsl = [rng(0, 1), rng(0.0, 0.8)**0.5, rng(0.2, 0.8)];
 		const waterhsl = [rng(0, 1), rng(0.0, 0.7)**0.5, rng(0.2, 0.8)];
