@@ -1,7 +1,7 @@
 import { Gfx, calculateNormals } from 'engine';
 import { PHI, Point3 } from 'engine/math';
 import { ColorVertex, SimpleMesh } from 'engine/mesh';
-import { scale } from 'engine/math/vectors';
+import { magnitude, magnitudeSquared, scale } from 'engine/math/vectors';
 
 const { cos, sin } = Math;
 
@@ -29,19 +29,23 @@ function toVertex(position: Point3, i: number): ColorVertex {
 
 export class ShipMesh extends SimpleMesh {
 	constructor(gfx: Gfx) {
-		// Lander mode mesh
-		const landerVertices: Array<ColorVertex> = buildLanderMesh(toVertex);
-		calculateNormals(landerVertices);
-
 		// Space mode mesh
 		const spaceVertices: Array<ColorVertex> = buildSpaceMesh(toVertex);
 		calculateNormals(spaceVertices);
 
-		super(gfx, [...landerVertices, ...spaceVertices]);
+		// Lander mode mesh
+		const landerVertices: Array<ColorVertex> = buildLanderMesh(toVertex);
+		calculateNormals(landerVertices);
 
-		// Force it to 2 variants
+		// Ground mode mesh
+		const groundVertices: Array<ColorVertex> = buildGroundMesh(toVertex);
+		calculateNormals(groundVertices);
+
+		super(gfx, [...spaceVertices, ...landerVertices, ...groundVertices]);
+
+		// Force it to 3 variants. Space, Lander, and Ground
 		this.vertexCount = landerVertices.length;
-		this.variantCount = 2;
+		this.variantCount = 3;
 	}
 }
 
@@ -88,6 +92,25 @@ export function buildSpaceMesh<T>(callback: (position: Point3, index: number) =>
 			sz *= 0.3 + 0.4 * abs(p[0]);
 		}
 		const q = scale(p, [sx * size, sy * size, sz * size]);
+		return callback(q, i);
+	});
+}
+export function buildGroundMesh<T>(callback: (position: Point3, index: number) => T): Array<T> {
+	const { ceil } = Math;
+	const hull = buildNGon(6);
+	const size = 0.06;
+	const s = size;
+	const e = 0.0001;
+	return hull.map((p, i) => {
+		const q: Point3 = p[1] > -e
+			// Top
+			? [
+				p[0] * size,
+				(p[1] + 1.2) * size,
+				p[2] * size,
+			]
+			// Bottom
+			: p.map(v => v * size) as Point3;
 		return callback(q, i);
 	});
 }

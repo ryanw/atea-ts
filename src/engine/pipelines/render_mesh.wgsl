@@ -122,7 +122,7 @@ fn vs_main(in: VertexIn) -> VertexOut {
 
 	var v = Vertex();
 	if (in.variantBlend > 0.0) {
-		let variantIndex1 = in.variantIndex + pawn.variantIndex - 1u;
+		let variantIndex1 = in.variantIndex + pawn.variantIndex + 1u;
 		let vertexOffset1 = euclidModu(variantIndex1, pawn.variantCount) * pawn.vertexCount;
 		let idx1 = in.id + vertexOffset1;
 		let pkv1 = vertices[idx1];

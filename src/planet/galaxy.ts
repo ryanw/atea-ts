@@ -110,7 +110,7 @@ export class Planet {
 		this.terrainSeed = rngi();
 		this.density = rng(0.5, 1.5);
 		this.waterLevel = rng(0, 100) | 0;
-		this.radius = rng(200, 700) | 0;
+		this.radius = 500;//rng(200, 700) | 0;
 		const orbitOffset = rng(0.0, Math.PI * 2);
 		const orbitSpeed = rng(0, 1);
 		const orbitTilt = quaternionFromEuler(0, 0, rng(0.0, Math.PI / 6.0));

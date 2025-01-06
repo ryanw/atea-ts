@@ -79,6 +79,7 @@ export class PlayerInputSystem extends System {
 
 		let targetScale = tran.scale;
 		const t = min(1.0, dt * 10.0);
+		/*
 		switch (ship.mode) {
 			case ShipMode.Lander:
 				if (material.variant !== 0 && (material.variant | 0) !== 0) {
@@ -99,6 +100,36 @@ export class PlayerInputSystem extends System {
 					material.variant = 1;
 				}
 				break;
+		}
+		*/
+
+		let blendToVariant = 0;
+		switch (ship.mode) {
+			case ShipMode.Space:
+				blendToVariant = 0;
+				break;
+
+			case ShipMode.Lander:
+				blendToVariant = 1;
+				break;
+
+			case ShipMode.Ground:
+				blendToVariant = 2;
+				break;
+		}
+
+
+		if (material.variant > blendToVariant) {
+			material.variant -= t;
+			if (material.variant < blendToVariant) {
+				material.variant = blendToVariant;
+			}
+		}
+		else {
+			material.variant += t;
+			if (material.variant > blendToVariant) {
+				material.variant = blendToVariant;
+			}
 		}
 
 		const diff = subtract(targetScale, tran.scale);
@@ -136,22 +167,16 @@ export class PlayerInputSystem extends System {
 
 		this.updateLander(dt, world, entity);
 
-		/*
-		switch (ship.mode) {
-			case ShipMode.Space:
-				this.updateSpace(dt, world, entity);
-				break;
-			case ShipMode.Lander:
-				this.updateLander(dt, world, entity);
-				break;
-		}
-		*/
-
 		for (const [key, value] of this.pressedKeys.entries()) {
 			let adjust = 1;
 			switch (key) {
 				case Key.ToggleMode:
-					ship.mode = ship.mode === ShipMode.Lander ? ShipMode.Space : ShipMode.Lander;
+					ship.mode =
+						ship.mode === ShipMode.Space
+							? ShipMode.Lander
+							: ship.mode === ShipMode.Lander
+								? ShipMode.Ground
+								: ShipMode.Space;
 					break;
 
 				case Key.PrevCamera:

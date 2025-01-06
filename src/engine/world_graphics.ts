@@ -116,7 +116,7 @@ export class WorldGraphics {
 				const posMesh = this.debugMeshes.dot.pawn!;
 				const positionId = this.debugMeshes.dot.mesh.pushInstance({
 					transform,
-					materialIndex: posMesh.material.instanceIndex,
+					materialIndex: BigInt(posMesh.material.instanceIndex),
 					instanceColor1: 0xffffffff,
 					instanceColor2: 0xffffffff,
 					instanceColor3: 0xffffffff,
@@ -127,7 +127,7 @@ export class WorldGraphics {
 				const velMesh = this.debugMeshes.vector.pawn!;
 				const velocityId = this.debugMeshes.vector.mesh.pushInstance({
 					transform,
-					materialIndex: velMesh.material.instanceIndex,
+					materialIndex: BigInt(velMesh.material.instanceIndex),
 					instanceColor1: 0xffffffff,
 					instanceColor2: 0xffffffff,
 					instanceColor3: 0xffffffff,
@@ -162,10 +162,11 @@ export class WorldGraphics {
 		}
 
 		if (!this.debugMeshes.vector.pawn) {
-			this.debugMeshes.vector.pawn = scene.addMesh(
+			const pawn = scene.addMesh(
 				this.debugMeshes.vector.mesh,
 				new DebugMaterial(this.gfx, 0xff00ff00n, true),
 			);
+			this.debugMeshes.vector.pawn = pawn;
 		}
 	}
 
